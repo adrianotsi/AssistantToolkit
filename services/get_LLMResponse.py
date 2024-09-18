@@ -8,7 +8,6 @@ class DiscoveryContext(BaseModel):
     question: str
 
 def get_LLMResponse(discovery_context):
-    prompt = f"{discovery_context.context}\n\nUsuário: {discovery_context.question}\nAI:"
 
     headers = {
         'Content-Type': 'application/json'
@@ -16,7 +15,16 @@ def get_LLMResponse(discovery_context):
 
     payload = { 
         "model": "llama3.1",
-        "prompt": prompt,
+        "prompt": f"""
+                    You are a virtual assistant designed to assist agents during a customer retention operation. 
+                    Your primary role is to instruct the agent on how to retain the customer by offering all possible retention strategies. 
+                    When a customer expresses the desire to cancel their plan, guide the agent to propose alternative offers or solutions to prevent cancellation. 
+                    Only if the customer rejects all retention attempts should the agent proceed with logging the cancellation reason. 
+                    Always provide the agent with specific instructions on what to say and do. Do not speak directly to the customer. 
+                    Instead, instruct the agent on how to approach the conversation and retain the customer as much as possible. 
+                    All responses must always be provided in **Brazilian Portuguese**. 
+                    This is your knowledgebase: {discovery_context.context}.
+                    This is the question from agent: {discovery_context.question}""",
         "stream":False
     }
 
