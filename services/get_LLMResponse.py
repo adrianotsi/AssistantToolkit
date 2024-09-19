@@ -28,19 +28,20 @@ def get_LLMResponse(discovery_context):
         "stream":False
     }
 
-    # TODO: improve logic to handle LLM response
     try:
         response = requests.post(os.getenv("LLAMA_API"), headers=headers, json=payload)
         response.raise_for_status()
 
         data = response.json()
-        print(data)
+        
         if 'text' in data:
             return data['text']
         elif 'choices' in data and len(data['choices']) > 0:
-            return data['choices'][0]['text']
+            return data['choices'][0].get('text', "Resposta não encontrada")
+        elif 'error' in data:
+            raise HTTPException(status_code=502, detail=f"Erro da API do Llama: {data['error']}")
         else:
-            return data
+            raise HTTPException(status_code=502, detail="Formato de resposta inesperado do modelo Llama.")
+    
     except requests.exceptions.RequestException as e:
-        print('Erro ao chamar a API do Llama:', e)
-        raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama" + str(e))
+        raise HTTPException(status_code=500, detail=f"Erro ao obter resposta do Llama: {e}")
