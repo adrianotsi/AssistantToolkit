@@ -13,16 +13,16 @@ def query_discovery(user_query):
         'version': '2023-03-31'  # Verifique a versão correta da API
     }
     headers = {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': os.getenv("DISCOVERY_API_KEY")
     }
-    auth = ('apikey', os.getenv("DISCOVERY_API_KEY"))
 
     payload = {
         'natural_language_query': user_query
     }
 
     try:
-        response = requests.post(url, headers=headers, params=params, auth=auth, json=payload)
+        response = requests.post(url, headers=headers, params=params, json=payload)
         response.raise_for_status()
 
         return response.json()
