@@ -8,6 +8,8 @@ app = FastAPI(
     description="A short API to integrate IBM Discovery plus LLM Models.",
     version="1.0.0"
 )
+
+app.openapi_version = "3.0.2"
 load_dotenv(override=True)
 
 @app.get("/", tags=["Hello World"], name='its alive?', description='Just a Hello World')
