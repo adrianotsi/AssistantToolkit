@@ -14,7 +14,7 @@ def get_LLMResponse(discovery_context):
     }
 
     payload = { 
-        "model": "llama3.1",
+        "model": "llama3.1:70b",
         "prompt": f"""
                     You are a virtual assistant designed to assist agents during a customer retention operation. 
                     Your primary role is to instruct the agent on how to retain the customer by offering all possible retention strategies. 
@@ -28,18 +28,19 @@ def get_LLMResponse(discovery_context):
         "stream":False
     }
 
+    # TODO: improve logic to handle LLM response
     try:
-        response = requests.post(os.getenv("LLAMA_API_ENDPOINT"), headers=headers, json=payload)
+        response = requests.post(os.getenv("LLAMA_API"), headers=headers, json=payload)
         response.raise_for_status()
 
         data = response.json()
-
+        print(data)
         if 'text' in data:
             return data['text']
         elif 'choices' in data and len(data['choices']) > 0:
             return data['choices'][0]['text']
         else:
-            return ''
+            return data
     except requests.exceptions.RequestException as e:
         print('Erro ao chamar a API do Llama:', e)
-        raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama")
+        raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama" + str(e))

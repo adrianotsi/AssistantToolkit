@@ -1,4 +1,3 @@
-from typing import Union
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from services.get_LLMResponse import get_LLMResponse, DiscoveryContext
@@ -9,8 +8,7 @@ app = FastAPI(
     description="A short API to integrate IBM Discovery plus LLM Models.",
     version="1.0.0"
 )
-load_dotenv()
-
+load_dotenv(override=True)
 
 @app.get("/", tags=["Hello World"], name='its alive?', description='Just a Hello World')
 def read_root():
