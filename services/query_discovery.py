@@ -18,13 +18,18 @@ def query_discovery(user_query):
     }
 
     payload = {
-        'natural_language_query': user_query
+        'query': user_query,
+        'natural_language_query': user_query,
+        'passages':{
+            'characters': 30000
+        }
     }
 
     try:
         response = requests.post(url, headers=headers, params=params, json=payload)
         response.raise_for_status()
-
+        data = response.json()
+        return data["results"][0]['document_passages'][0]['passage_text'] + data["results"][1]['document_passages'][0]['passage_text']
         return response.json()
     except requests.exceptions.HTTPError as http_err:
         raise HTTPException(status_code=response.status_code, detail=str(http_err))
