@@ -1,7 +1,11 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI
+from pydantic import BaseModel
 from services.get_LLMResponse import get_LLMResponse, DiscoveryContext
 from services.query_discovery import query_discovery, UserQuery
+
+class ResultQuery(BaseModel):
+    result: str 
 
 app = FastAPI(
     title="Assistant Toolkit",
@@ -17,9 +21,8 @@ def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/queryDiscovery/", tags=["Query Search"])
+@app.post("/queryDiscovery/", tags=["Query Search"], response_model=ResultQuery)
 async def queryDiscovery(request: UserQuery):
-    print(request)
     res = query_discovery(request.input)
     return res
 
