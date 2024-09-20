@@ -4,7 +4,7 @@ from pydantic import BaseModel
 import requests
 
 class DiscoveryContext(BaseModel):
-    context: object
+    context: str
     question: str
 
 def get_LLMResponse(discovery_context):
