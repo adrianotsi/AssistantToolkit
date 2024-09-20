@@ -16,11 +16,6 @@ app = FastAPI(
 app.openapi_version = "3.0.2"
 load_dotenv(override=True)
 
-@app.get("/", tags=["Hello World"], name='its alive?', description='Just a Hello World')
-def read_root():
-    return {"Hello": "World"}
-
-
 @app.post("/queryDiscovery/", tags=["Query Search"], response_model=ResultQuery)
 async def queryDiscovery(request: UserQuery):
     res = query_discovery(request.input)
