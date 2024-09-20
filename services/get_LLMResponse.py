@@ -42,8 +42,8 @@ def get_LLMResponse(discovery_context):
 
         data = response.json()
         if data["message"]["content"]:
-            return data["message"]["content"]
+            return data
         else:
-            return "Não encontrei nada a respeito, pode perguntar novamente?"
+            raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama")
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama" + str(e))
