@@ -28,14 +28,18 @@ def query_discovery(user_query):
     try:
         response = requests.post(url, headers=headers, params=params, json=payload)
         response.raise_for_status()
-        all_texts = ''
+        all_passages = ''
         data = response.json()
+
         for result in data.get("results", []):
-            text_content = result.get("text")
-            if text_content:
-                all_texts += text_content + "\n" 
+            document_passages = result.get("document_passages", [])
+            for passage in document_passages:
+                passage_text = passage.get("passage_text")
+                if passage_text:
+                    all_passages += passage_text + "\n"
+
         return {
-            "result": all_texts
+            "result": all_passages
         }
     except requests.exceptions.HTTPError as http_err:
         raise HTTPException(status_code=response.status_code, detail=str(http_err))
