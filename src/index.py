@@ -37,7 +37,7 @@ class LLMResponse(BaseModel):
 
 @app.post("/queryDiscovery/", tags=["Query Search"], response_model=ResultQuery)
 async def queryDiscovery(request: UserQuery):
-    res = query_discovery(request.input)
+    res = query_discovery(request)
     return res
 
 @app.post("/getLLMResponse/", tags=["LLM"], response_model=LLMResponse)

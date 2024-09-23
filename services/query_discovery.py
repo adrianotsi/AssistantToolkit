@@ -5,10 +5,11 @@ import requests
 
 class UserQuery(BaseModel):
     input: str
+    projectID: str
 
 def query_discovery(user_query):
     # TODO: Change to IBM Lib and get document passages 
-    url = f'{os.getenv("DISCOVERY_ENDPOINT")}/v2/projects/{os.getenv("PROJECT_ID")}/query'
+    url = f'{os.getenv("DISCOVERY_ENDPOINT")}/v2/projects/{user_query.projectID}/query'
     params = {
         'version': '2023-03-31'  # Verifique a versão correta da API
     }
@@ -18,8 +19,8 @@ def query_discovery(user_query):
     }
 
     payload = {
-        'query': user_query,
-        'natural_language_query': user_query,
+        'query': user_query.input,
+        'natural_language_query': user_query.input,
         'passages':{
             'characters': 30000
         }
