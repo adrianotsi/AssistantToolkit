@@ -8,7 +8,7 @@ from services.query_discovery import query_discovery, UserQuery
 app = FastAPI(
     title="Assistant Toolkit",
     description="A short API to integrate IBM Discovery plus LLM Models.",
-    version="1.0.0"
+    version="1.0.5"
 )
 
 app.openapi_version = "3.0.2"
