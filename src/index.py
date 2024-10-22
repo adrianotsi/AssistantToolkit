@@ -1,19 +1,25 @@
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from services import mongo_service
 from services.get_LLMResponse import get_LLMResponse, DiscoveryContext
 from services.query_discovery import query_discovery, UserQuery
+from pymongo.errors import ConnectionFailure
+import motor.motor_asyncio
+import os
 
+from services.register_service import Register, RegisterService
 
 app = FastAPI(
     title="Assistant Toolkit",
     description="A short API to integrate IBM Discovery plus LLM Models.",
-    version="1.0.5"
+    version="2.0.0"
 )
 
 app.openapi_version = "3.0.2"
 load_dotenv(override=True)
 
+mongo_service = mongo_service.MongoService()
 
 class ResultQuery(BaseModel):
     result: str 
@@ -44,3 +50,19 @@ async def queryDiscovery(request: UserQuery):
 async def getLLMResponse(request: DiscoveryContext):
     res = get_LLMResponse(request)
     return res
+
+@app.get("/healthCheck", tags=['Analyzes'])
+async def check_mongo_connection():
+    try:
+        await mongo_service.connect()
+        return {"status": "Conexão bem-sucedida!"}
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+# TODO: improve responses 
+@app.post("/createRegister/", tags=['Analyzes'])
+async def createRegister(request: Register):
+    request = request.model_dump()
+    register_service = RegisterService(mongo_service)
+    register = await register_service.create_register(request)
+    return register
