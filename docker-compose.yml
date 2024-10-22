@@ -3,3 +3,24 @@ services:
     build: .
     ports:
       - "8000:8000"
+    volumes:
+      - ./:/app:rw
+    depends_on:
+      - mongodb
+    env_file:
+      - .env  # Carregar variáveis do arquivo .env
+    networks:
+      - fastapi-network
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./db:/data/db
+    networks:
+      - fastapi-network
+
+networks:
+  fastapi-network:
+    driver: bridge
