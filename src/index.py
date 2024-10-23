@@ -1,13 +1,10 @@
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from services import mongo_service
+from services.analytcs_service import AnalytcsService
 from services.get_LLMResponse import get_LLMResponse, DiscoveryContext
 from services.query_discovery import query_discovery, UserQuery
-from pymongo.errors import ConnectionFailure
-import motor.motor_asyncio
-import os
-
 from services.register_service import Register, RegisterService
 
 app = FastAPI(
@@ -66,3 +63,10 @@ async def createRegister(request: Register):
     register_service = RegisterService(mongo_service)
     register = await register_service.create_register(request)
     return register
+
+# TODO: improve this service and add exceptions for empty responses
+@app.get("/analytcs", tags=['Analyzes'])
+async def analytcs(start_date: str = Query(...), end_date: str = Query(...), area: str = Query(...)):
+    analytcs_service = AnalytcsService(mongo_service)
+    analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area)
+    return analytcs_res

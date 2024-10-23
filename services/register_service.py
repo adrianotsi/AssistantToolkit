@@ -1,12 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from services.mongo_service import MongoService
 from pymongo.errors import PyMongoError
+from datetime import datetime
 
 class Register(BaseModel):
     area: str
     question: str
     response: str
     feedback: str
+    util: str
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
 
 class RegisterService:
     def __init__(self, mongo_service: MongoService):
@@ -19,6 +23,9 @@ class RegisterService:
                 raise ValueError("Um campo está inválido")
             
             db = await self.mongo_service.get_database()
+
+            register['created_at'] = datetime.now()
+            register['updated_at'] = datetime.now()
             result = await db["analyzes"].insert_one(register)
             
             if not result.acknowledged:
