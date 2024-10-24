@@ -1,15 +1,16 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 from services import mongo_service
 from services.analytcs_service import AnalytcsService
-from services.get_LLMResponse import get_LLMResponse, DiscoveryContext
-from services.query_discovery import query_discovery, UserQuery
+from services.get_LLMResponse import LLMResponse, get_LLMResponse, LLMContext
+from services.query_discovery import ResultQuery, query_discovery, UserQuery
 from services.register_service import Register, RegisterService
 
 app = FastAPI(
     title="Assistant Toolkit",
-    description="A short API to integrate IBM Discovery plus LLM Models.",
+    description="An API to integrate IBM Discovery with LLM Models and A.I Assistants.",
     version="2.0.0"
 )
 
@@ -18,25 +19,9 @@ load_dotenv(override=True)
 
 mongo_service = mongo_service.MongoService()
 
-class ResultQuery(BaseModel):
-    result: str 
-
-class Message(BaseModel):
-    role: str
-    content: str
-
-class LLMResponse(BaseModel):
-    model: str
-    created_at: str
-    message: Message
-    done_reason: str
-    done: bool
-    total_duration: int
-    load_duration: int
-    prompt_eval_count: int
-    prompt_eval_duration: int
-    eval_count: int
-    eval_duration: int
+@app.get("/", include_in_schema=False)
+async def root():
+    return RedirectResponse(url="/docs")
 
 @app.post("/queryDiscovery/", tags=["Query Search"], response_model=ResultQuery)
 async def queryDiscovery(request: UserQuery):
@@ -44,7 +29,7 @@ async def queryDiscovery(request: UserQuery):
     return res
 
 @app.post("/getLLMResponse/", tags=["LLM"], response_model=LLMResponse)
-async def getLLMResponse(request: DiscoveryContext):
+async def getLLMResponse(request: LLMContext):
     res = get_LLMResponse(request)
     return res
 
