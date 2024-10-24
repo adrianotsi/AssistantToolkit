@@ -1,4 +1,5 @@
 import os
+import uuid
 from fastapi import HTTPException
 from pydantic import BaseModel
 import requests
@@ -6,6 +7,11 @@ import requests
 class UserQuery(BaseModel):
     input: str
     projectID: str
+    conversationID: str
+    
+class ResultQuery(BaseModel):
+    result: str 
+    conversationID: str
 
 def query_discovery(user_query):
     # TODO: Change to IBM Lib and get document passages 
@@ -26,6 +32,8 @@ def query_discovery(user_query):
         }
     }
 
+    conversationID = user_query.conversationID or str(uuid.uuid4())
+
     try:
         response = requests.post(url, headers=headers, params=params, json=payload)
         response.raise_for_status()
@@ -40,7 +48,8 @@ def query_discovery(user_query):
                     all_passages += passage_text + "\n"
 
         return {
-            "result": all_passages
+            "result": all_passages,
+            "conversationID": conversationID
         }
     except requests.exceptions.HTTPError as http_err:
         raise HTTPException(status_code=response.status_code, detail=str(http_err))
