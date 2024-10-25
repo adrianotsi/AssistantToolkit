@@ -23,17 +23,28 @@ mongo_service = mongo_service.MongoService()
 async def root():
     return RedirectResponse(url="/docs")
 
-@app.post("/queryDiscovery/", tags=["Query Search"], response_model=ResultQuery)
+@app.post("/queryDiscovery/", 
+          tags=["Query Search"],
+          name="Busca conteúdo no IBM Discovery e gera o conversationID", 
+          description="Realiza a busca no IBM Discovery, retorna as passagens encontradas e o conversationID", 
+          response_model=ResultQuery)
 async def queryDiscovery(request: UserQuery):
     res = query_discovery(request)
     return res
 
-@app.post("/getLLMResponse/", tags=["LLM"], response_model=LLMResponse)
+@app.post("/getLLMResponse/", 
+          tags=["LLM"], 
+          name="Gera a resposta no LLM",
+          description="Com base no conteúdo encontrado em Query Search e prompt engineering retorna uma resposta gerada no modelo alocado",
+          response_model=LLMResponse)
 async def getLLMResponse(request: LLMContext):
     res = get_LLMResponse(request)
     return res
 
-@app.get("/healthCheck", tags=['Analyzes'])
+@app.get("/healthCheck", 
+         tags=['Analyzes'],
+         name="Verifica conexão",
+         description="Verifica se há conexão com o banco de dados")
 async def check_mongo_connection():
     try:
         await mongo_service.connect()
@@ -41,8 +52,11 @@ async def check_mongo_connection():
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-# TODO: improve responses 
-@app.post("/createRegister/", tags=['Analyzes'])
+# TODO: improve responses and include more validations
+@app.post("/createRegister/", 
+          tags=['Analyzes'],
+          name="Cria registro",
+          description="Adiciona o registro das questões, respostas e avaliações por operação")
 async def createRegister(request: Register):
     request = request.model_dump()
     register_service = RegisterService(mongo_service)
@@ -50,7 +64,10 @@ async def createRegister(request: Register):
     return register
 
 # TODO: improve this service and add exceptions for empty responses
-@app.get("/analytcs", tags=['Analyzes'])
+@app.get("/analytcs", 
+         tags=['Analyzes'],
+         name="Gera relatório",
+         description="Devolve CSV com os registros encontrados conforme query")
 async def analytcs(start_date: str = Query(...), end_date: str = Query(...), area: str = Query(...)):
     analytcs_service = AnalytcsService(mongo_service)
     analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area)
