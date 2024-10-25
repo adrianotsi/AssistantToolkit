@@ -31,8 +31,7 @@ class LLMResponse(BaseModel):
 
 def get_LLMResponse(LLMContext):
     try:
-        cleaned_messages = LLMContext.messages.replace('\n', ' ').replace('\r', '')
-        messages = json.loads(cleaned_messages)
+        messages = json.loads(LLMContext.messages)
         prompt = f"""
         {LLMContext.prompt}
         Base de conhecimento: {LLMContext.context}
