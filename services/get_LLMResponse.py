@@ -1,3 +1,4 @@
+import json
 import os
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -8,7 +9,7 @@ class LLMContext(BaseModel):
     context: str
     question: str
     prompt: str
-    messages: list
+    messages: str
     conversationID: str
 
 class Message(BaseModel):
@@ -30,7 +31,8 @@ class LLMResponse(BaseModel):
 
 def get_LLMResponse(LLMContext):
     try:
-        messages = LLMContext.messages
+        messages = json.loads(LLMContext.messages)
+
         prompt = f"""
         {LLMContext.prompt}
         Base de conhecimento: {LLMContext.context}
@@ -89,7 +91,7 @@ def get_LLMResponse(LLMContext):
                 },
                 {
                     "role": "system",
-                    "content": f"Base de conhecimento atualizada: {LLMContext.conversationID}"
+                    "content": f"Base de conhecimento atualizada: {LLMContext.context}"
                 },
                 {
                     "role": "assistant",
