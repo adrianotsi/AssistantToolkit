@@ -32,7 +32,7 @@ def query_discovery(user_query):
         }
     }
 
-    conversationID = user_query.conversationID or str(uuid.uuid4())
+    conversationID = user_query.conversationID if user_query.conversationID not in [None, "null"] else str(uuid.uuid4())
 
     try:
         response = requests.post(url, headers=headers, params=params, json=payload)
