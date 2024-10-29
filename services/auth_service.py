@@ -9,7 +9,7 @@ JWT_ALGORITHM = os.getenv("JWT_ALGORITHM")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ACCESS_TOKEN_EXPIRE_MINUTES = 120
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/get_token")
 
 # class ClientCredentials(BaseModel):
 #     userName: str
