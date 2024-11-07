@@ -6,7 +6,7 @@ from services import mongo_service
 from services.analytcs_service import AnalytcsService
 from services.get_LLMResponse import LLMResponse, get_LLMResponse, LLMContext
 from services.query_discovery import ResultQuery, query_discovery, UserQuery
-from services.register_service import Register, RegisterService
+from services.register_service import Register, RegisterLLM, RegisterService
 
 app = FastAPI(
     title="Assistant Toolkit",
@@ -55,9 +55,20 @@ async def check_mongo_connection():
 # TODO: improve responses and include more validations
 @app.post("/createRegister/", 
           tags=['Analyzes'],
-          name="Cria registro",
+          name="Cria registro: Perguntas + Respostas + Feedback",
           description="Adiciona o registro das questões, respostas e avaliações por operação")
 async def createRegister(request: Register):
+    request = request.model_dump()
+    register_service = RegisterService(mongo_service)
+    register = await register_service.create_register(request)
+    return register
+
+# TODO: improve responses and include more validations
+@app.post("/createRegisterLLM/", 
+          tags=['Analyzes'],
+          name="Cria registro: Perguntas + Respostas",
+          description="Adiciona o registro das questões, respostas geradas no LLM por operação")
+async def createRegister(request: RegisterLLM):
     request = request.model_dump()
     register_service = RegisterService(mongo_service)
     register = await register_service.create_register(request)
@@ -66,9 +77,9 @@ async def createRegister(request: Register):
 # TODO: improve this service and add exceptions for empty responses
 @app.get("/analytcs", 
          tags=['Analyzes'],
-         name="Gera relatório",
+         name="Gera relatório: Perguntas + Respostas + Feedback",
          description="Devolve CSV com os registros encontrados conforme query")
-async def analytcs(start_date: str = Query(...), end_date: str = Query(...), area: str = Query(...)):
+async def analytcs(start_date: str = Query(...), end_date: str = Query(...), area: str = Query(...), type: str = Query(...)):
     analytcs_service = AnalytcsService(mongo_service)
-    analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area)
+    analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area, type)
     return analytcs_res
