@@ -10,7 +10,7 @@ class UserQuery(BaseModel):
     conversationID: str
     
 class ResultQuery(BaseModel):
-    result: str 
+    result: dict 
     conversationID: str
 
 def query_discovery(user_query):
@@ -28,7 +28,9 @@ def query_discovery(user_query):
         'query': user_query.input,
         'natural_language_query': user_query.input,
         'passages':{
-            'characters': 30000
+            'enable': True,
+            'characters': 2000,
+            'max_per_document': 15
         }
     }
 
@@ -37,18 +39,22 @@ def query_discovery(user_query):
     try:
         response = requests.post(url, headers=headers, params=params, json=payload)
         response.raise_for_status()
-        all_passages = ''
+        all_passages = {}  # Inicializa como dicionário vazio
         data = response.json()
+
+        passage_index = 1  # Contador para numerar cada passagem
 
         for result in data.get("results", []):
             document_passages = result.get("document_passages", [])
             for passage in document_passages:
                 passage_text = passage.get("passage_text")
                 if passage_text:
-                    all_passages += passage_text + "\n"
+                    # Adiciona a passagem ao dicionário com uma chave numérica
+                    all_passages[f"passage_{passage_index}"] = passage_text
+                    passage_index += 1
 
         return {
-            "result": all_passages,
+            "result": all_passages,  # Retorna o dicionário de passagens
             "conversationID": conversationID
         }
     except requests.exceptions.HTTPError as http_err:
