@@ -1,3 +1,4 @@
+import json
 import os
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -39,6 +40,8 @@ class LLMResponse(BaseModel):
 
 def get_LLMResponse(LLMContext, context=None):
     try:
+        if context != None:
+            conversationID = context['conversationID']
         messages = LLMContext.messages
 
         headers = {
@@ -61,7 +64,7 @@ def get_LLMResponse(LLMContext, context=None):
                 {
                     "role": "system",
                     "content": (
-                        f"Inicie uma nova conversa exclusiva com o ID {LLMContext.conversationID}. "
+                        f"Inicie uma nova conversa exclusiva com o ID {getattr(LLMContext, 'conversationID', conversationID)}. "
                         "Não mencione nenhum assunto ou conversa que foi conversado anteriormente. Considere apenas as informações desta sequencia de mensagens."
                         "Este ID é sigiloso"
                     )
