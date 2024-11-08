@@ -9,15 +9,14 @@ class MongoService:
         self._db = None
 
     async def connect(self, db_name: str = None):
-        if not self._client:
-            try:
-                self._client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URL"))
-                await self._client.admin.command("ping")
-                self._db_name = db_name if db_name else self._db_name
-                self._db = self._client[self._db_name]
-                return self._db
-            except ConnectionFailure as e:
-                raise Exception(f"Falha ao conectar: {str(e)}")
+        try:
+            self._client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URI"))
+            await self._client.admin.command("ping")
+            self._db_name = db_name if db_name else self._db_name
+            self._db = self._client[self._db_name]
+            return self._db
+        except ConnectionFailure as e:
+            raise Exception(f"Falha ao conectar: {str(e)}")
 
     async def get_database(self, db_name: str = None):
         if db_name and (self._db is None or self._db_name != db_name):
