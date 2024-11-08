@@ -11,6 +11,15 @@ class LLMContext(BaseModel):
     messages: list
     conversationID: str
 
+class GenResponse(BaseModel):
+    area: str
+    question: str
+    prompt: str
+    messages: list
+    input: str
+    projectID: str
+    conversationID: str
+
 class Message(BaseModel):
     role: str
     content: str
@@ -28,7 +37,7 @@ class LLMResponse(BaseModel):
     eval_count: int
     eval_duration: int
 
-def get_LLMResponse(LLMContext):
+def get_LLMResponse(LLMContext, context=None):
     try:
         messages = LLMContext.messages
 
@@ -42,7 +51,7 @@ def get_LLMResponse(LLMContext):
             "keep_alive": 0,
             "options": {
                 # "top_p": 15,  # Diminuído para limitar respostas criativas
-                "temperature": 1,  # Mais baixa para respostas diretas e seguras
+                "temperature": 2,  # Mais baixa para respostas diretas e seguras
                 # "top_k": 10,  # Reduzido para manter consistência nas respostas
                 # "repeat_last_n": 500,  # Considerar aumentar para manter o contexto recente
                 # "repeat_penalty": 1  # Penalidade para evitar repetições
@@ -53,12 +62,13 @@ def get_LLMResponse(LLMContext):
                     "role": "system",
                     "content": (
                         f"Inicie uma nova conversa exclusiva com o ID {LLMContext.conversationID}. "
-                        "Esqueça TUDO que foi enviado anteriormente. Considere apenas as informações desta sessão."
+                        "Não mencione nenhum assunto ou conversa que foi conversado anteriormente. Considere apenas as informações desta sequencia de mensagens."
+                        "Este ID é sigiloso"
                     )
                 },
                 {
                     "role": "system",
-                    "content": f"Informações Relevantes para Respostas: {LLMContext.context}"
+                    "content": f"Informações Relevantes para Respostas: {getattr(LLMContext, 'context', context)}"
                 },
                 {
                     "role": "system",
