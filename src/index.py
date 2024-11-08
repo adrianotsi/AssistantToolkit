@@ -69,7 +69,7 @@ async def createRegister(request: Register, token: str = Depends(oauth2_scheme))
           tags=['Analyzes'],
           name="Cria registro: Perguntas + Respostas",
           description="Adiciona o registro das questões, respostas geradas no LLM por operação")
-async def createRegister(request: RegisterLLM):
+async def createRegisterLL(request: RegisterLLM, token: str = Depends(oauth2_scheme)):
     request = request.model_dump()
     register_service = RegisterService(mongo_service)
     register = await register_service.create_register(request)
@@ -80,7 +80,7 @@ async def createRegister(request: RegisterLLM):
          tags=['Analyzes'],
          name="Gera relatório: Perguntas + Respostas + Feedback",
          description="Devolve CSV com os registros encontrados conforme query")
-async def analytcs(start_date: str = Query(...), end_date: str = Query(...), area: str = Query(...), type: str = Query(...)):
+async def analytcs(start_date: str = Query(...), end_date: str = Query(...), area: str = Query(...), type: str = Query(...), token: str = Depends(oauth2_scheme)):
     analytcs_service = AnalytcsService(mongo_service)
     analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area, type)
     return analytcs_res
