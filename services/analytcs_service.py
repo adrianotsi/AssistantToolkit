@@ -9,14 +9,19 @@ class AnalytcsService:
     def __init__(self, mongo_service: MongoService):
         self.mongo_service = mongo_service
         
-    async def analytcs_search(self, start_date, end_date, area):
+    async def analytcs_search(self, start_date, end_date, area, type):
         try:
             start_date_obj = datetime.fromisoformat(start_date)
             end_date_obj = datetime.fromisoformat(end_date)
 
 
             db = await self.mongo_service.get_database()
-            collection = db.analyzes  
+            print('ESPERA')
+            print(type)
+            if type == 'LLMResults':
+                collection = db.analyzesLLM
+            else:
+                collection = db.analyzes  
 
             registers = collection.find({
                 "area": area,

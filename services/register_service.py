@@ -12,6 +12,13 @@ class Register(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
+class RegisterLLM(BaseModel):
+    area: str
+    question: str
+    response: str
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+
 class RegisterService:
     def __init__(self, mongo_service: MongoService):
         self.mongo_service = mongo_service
@@ -26,7 +33,10 @@ class RegisterService:
 
             register['created_at'] = datetime.now()
             register['updated_at'] = datetime.now()
-            result = await db["analyzes"].insert_one(register)
+            if 'feedback' not in register:
+                result = await db["analyzesLLM"].insert_one(register)
+            else:
+                result = await db["analyzes"].insert_one(register)
             
             if not result.acknowledged:
                 raise Exception("A inserção do registro falhou")
