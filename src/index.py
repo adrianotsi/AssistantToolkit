@@ -1,3 +1,4 @@
+import uuid
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
@@ -5,7 +6,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from services import client_service, mongo_service
 from services.analytcs_service import AnalytcsService
 from services.auth_service import create_jwt, oauth2_scheme
-from services.get_LLMResponse import GenResponse, LLMResponse, get_LLMResponse, LLMContext
+from services.get_LLMResponse import ConversationID, GenResponse, LLMResponse, get_LLMResponse, LLMContext
 from services.query_discovery import ResultQuery, query_discovery, UserQuery
 from services.register_service import Register, RegisterLLM, RegisterService
 
@@ -33,6 +34,14 @@ async def queryDiscovery(request: UserQuery, token: str = Depends(oauth2_scheme)
     res = query_discovery(request)
     return res
 
+@app.get("/getConversationID/", 
+          tags=["LLM"], 
+          name="Gera um ID para a conversa",
+          description="Gera um UUID para a conversa",
+          response_model=ConversationID)
+async def getConversationID():
+    return {'conversationID': str(uuid.uuid4())}
+
 @app.post("/getLLMResponse/", 
           tags=["LLM"], 
           name="Gera a resposta no LLM",
@@ -47,7 +56,7 @@ async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme
           name="Buscar conteúdo e gerar resposta",
           description="Busca o conteúdo no IBM DIscovery e retorna uma resposta gerada no modelo alocado",
           response_model=LLMResponse)
-async def getLLMResponse(request: GenResponse, token: str = Depends(oauth2_scheme)):
+async def generateResponse(request: GenResponse, token: str = Depends(oauth2_scheme)):
     discoveryContext = query_discovery(request)
     res = get_LLMResponse(request, discoveryContext)
     return res
