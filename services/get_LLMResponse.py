@@ -38,6 +38,9 @@ class LLMResponse(BaseModel):
     eval_count: int
     eval_duration: int
 
+class ConversationID(BaseModel):
+    conversationID: str
+
 def get_LLMResponse(LLMContext, context=None):
     try:
         if context != None:
