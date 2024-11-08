@@ -44,7 +44,7 @@ def get_LLMResponse(LLMContext):
                 "top_p": 15,  # Diminuído para limitar respostas criativas
                 "temperature": 1,  # Mais baixa para respostas diretas e seguras
                 "top_k": 10,  # Reduzido para manter consistência nas respostas
-                "repeat_last_n": 0,  # Considerar aumentar para manter o contexto recente
+                "repeat_last_n": 500,  # Considerar aumentar para manter o contexto recente
                 # "repeat_penalty": 1  # Penalidade para evitar repetições
             },
             "messages": [
@@ -57,7 +57,7 @@ def get_LLMResponse(LLMContext):
                 },
                 {
                     "role": "system",
-                    "content": f"Está é Base de Conhecimento do assistant, com instruções e pistas para resolver todos os cenários: {LLMContext.context}"
+                    "content": f"BASE DE CONHECIMENTOS: {LLMContext.context}"
                 },
                 {
                     "role": "system",
@@ -66,10 +66,10 @@ def get_LLMResponse(LLMContext):
                 {
                     "role": "system",
                     "content": (
-                        "Diretrizes do Assistente Virtual:\n"
+                        "Diretrizes do Assistente Virtual (asssitant):\n"
                         "1. Use apenas as informações da base de conhecimento desta sessão.\n"
-                        "2. Responda exclusivamente com detalhes exatos da base; não interprete ou adapte o conteúdo.\n"
-                        "3. Se a base não tiver a informação solicitada, responda: 'Informação não disponível na base de conhecimento'.\n"
+                        "2. Responda exclusivamente com detalhes exatos da base; não adapte o conteúdo.\n"
+                        "3. Se não for possível obter uma resposta satisfatória responda: 'Informação não disponível na base de conhecimento' e mencione o que foi encontrado.\n"
                         "NOTA MUITO IMPORTANTE: Se a base não tiver o conteúdo solicitado, tente informar o conteúdo mais semelhante possível na base de conhecimento.\n"
                         "4. NÃO crie scripts, procedimentos ou respostas genéricas que não estejam na base.\n"
                         f"5. Concentre-se apenas nesta conversa, com o ID {LLMContext.conversationID}.\n"
@@ -87,6 +87,14 @@ def get_LLMResponse(LLMContext):
                         f"Nota: Este ID ({LLMContext.conversationID}) é exclusivo desta sessão. "
                         "Ignorar qualquer outra informação fora deste ID. Está informação não pode ser mencionada ao user"
                     )
+                },
+                {
+                    "role": "system",
+                    "content": "lembre-se de tudo o que estava na base de conhecimento"
+                },
+                {
+                    "role": "system",
+                    "content": "Context: o atendente está com o cliente em linha, responda ao atendente."
                 },
                 {
                     "role": "assistant",
