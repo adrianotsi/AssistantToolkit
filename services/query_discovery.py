@@ -30,7 +30,7 @@ def query_discovery(user_query):
         'passages':{
             'enable': True,
             'characters': 2000,
-            'max_per_document': 15
+            'max_per_document': 2
         }
     }
 

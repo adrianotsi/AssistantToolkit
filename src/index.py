@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from services import client_service, mongo_service
 from services.analytcs_service import AnalytcsService
 from services.auth_service import create_jwt, oauth2_scheme
-from services.get_LLMResponse import LLMResponse, get_LLMResponse, LLMContext
+from services.get_LLMResponse import GenResponse, LLMResponse, get_LLMResponse, LLMContext
 from services.query_discovery import ResultQuery, query_discovery, UserQuery
 from services.register_service import Register, RegisterLLM, RegisterService
 
@@ -40,6 +40,16 @@ async def queryDiscovery(request: UserQuery, token: str = Depends(oauth2_scheme)
           response_model=LLMResponse)
 async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme)):
     res = get_LLMResponse(request)
+    return res
+
+@app.post("/generateResponse/", 
+          tags=["LLM"], 
+          name="Buscar conteúdo e gerar resposta",
+          description="Busca o conteúdo no IBM DIscovery e retorna uma resposta gerada no modelo alocado",
+          response_model=LLMResponse)
+async def getLLMResponse(request: GenResponse, token: str = Depends(oauth2_scheme)):
+    discoveryContext = query_discovery(request)
+    res = get_LLMResponse(request, discoveryContext)
     return res
 
 @app.get("/healthCheck", 
