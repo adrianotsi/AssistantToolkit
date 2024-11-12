@@ -112,7 +112,7 @@ async def register_client(client: client_service.Client):
     return result
 
 
-@app.post("/get_token", response_model=dict, include_in_schema=False)
+@app.post("/get_token", response_model=dict)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     client_data = await client_service.authenticate_client(form_data.username, form_data.password, mongo_service)
     if client_data:

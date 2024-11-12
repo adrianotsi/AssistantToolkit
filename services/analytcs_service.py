@@ -16,8 +16,6 @@ class AnalytcsService:
 
 
             db = await self.mongo_service.get_database()
-            print('ESPERA')
-            print(type)
             if type == 'LLMResults':
                 collection = db.analyzesLLM
             else:
