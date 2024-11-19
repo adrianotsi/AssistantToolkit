@@ -13,7 +13,7 @@ from services.register_service import Register, RegisterLLM, RegisterService
 app = FastAPI(
     title="Assistant Toolkit",
     description="An API to integrate IBM Discovery with LLM Models and A.I Assistants.",
-    version="2.0.0"
+    version="2.0.1"
 )
 
 app.openapi_version = "3.0.2"
