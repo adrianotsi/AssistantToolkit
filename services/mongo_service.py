@@ -10,7 +10,7 @@ class MongoService:
 
     async def connect(self, db_name: str = None):
         try:
-            self._client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGO_URI"))
+            self._client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
             await self._client.admin.command("ping")
             self._db_name = db_name if db_name else self._db_name
             self._db = self._client[self._db_name]
