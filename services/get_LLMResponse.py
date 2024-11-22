@@ -6,7 +6,7 @@ import requests
 
 class LLMContext(BaseModel):
     area: str
-    context: list
+    context: dict
     question: str
     model: Optional[str] = None
     prompt: str
