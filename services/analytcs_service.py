@@ -14,12 +14,8 @@ class AnalytcsService:
             start_date_obj = datetime.fromisoformat(start_date)
             end_date_obj = datetime.fromisoformat(end_date)
 
-
-            db = await self.mongo_service.get_database()
-            if type == 'LLMResults':
-                collection = db.analyzesLLM
-            else:
-                collection = db.analyzes  
+            collection_name = "analyzesLLM" if type == 'LLMResults' else "analyzes"
+            collection = await self.mongo_service.get_collection(collection_name)
 
             registers = collection.find({
                 "area": area,
@@ -33,20 +29,20 @@ class AnalytcsService:
             async for document in registers:
                 results.append(document)
 
-            # Criação de um DataFrame
+            # Criando o DataFrame com os resultados
             df = pd.DataFrame(results)
 
-            # Gerar CSV
+            # Gerando o arquivo CSV
             csv_buffer = io.StringIO()
             df.to_csv(csv_buffer, index=False)
             csv_buffer.seek(0)
 
-            # Retornar como streaming
+            # Retornando o arquivo como streaming
             return StreamingResponse(
                 iter([csv_buffer.getvalue().encode('utf-8')]),
                 media_type="text/csv",
                 headers={"Content-Disposition": "attachment; filename=relatorio.csv"}
             )
         
-        except:
-            raise HTTPException(status_code= 500, detail="Erro ao obter relatório")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Erro ao obter relatório: {str(e)}")

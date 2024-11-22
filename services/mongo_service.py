@@ -1,4 +1,4 @@
-import motor.motor_asyncio
+from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import ConnectionFailure
 import os
 
@@ -10,13 +10,19 @@ class MongoService:
 
     async def connect(self, db_name: str = None):
         try:
-            self._client = motor.motor_asyncio.AsyncIOMotorClient(os.getenv("MONGODB_URI"))
+            self._client = AsyncIOMotorClient(os.getenv("MONGODB_URI"))
             await self._client.admin.command("ping")
             self._db_name = db_name if db_name else self._db_name
             self._db = self._client[self._db_name]
             return self._db
         except ConnectionFailure as e:
             raise Exception(f"Falha ao conectar: {str(e)}")
+
+    async def disconnect(self):
+        if self._client:
+            self._client.close()
+            self._client = None
+            self._db = None
 
     async def get_database(self, db_name: str = None):
         if db_name and (self._db is None or self._db_name != db_name):
@@ -27,7 +33,13 @@ class MongoService:
         return self._db
 
     async def get_collection(self, collection_name: str, db_name: str = None):
+        # Obtém o banco de dados e retorna a coleção especificada
         db = await self.get_database(db_name)
         return db[collection_name]
 
-mongo_service_instance = MongoService()
+    async def __aenter__(self):
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        await self.disconnect()
