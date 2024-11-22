@@ -29,3 +29,5 @@ class MongoService:
     async def get_collection(self, collection_name: str, db_name: str = None):
         db = await self.get_database(db_name)
         return db[collection_name]
+
+mongo_service_instance = MongoService()

@@ -3,12 +3,13 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from services import client_service, mongo_service
+from services import client_service
 from services.analytcs_service import AnalytcsService
 from services.auth_service import create_jwt, oauth2_scheme
 from services.get_LLMResponse import ConversationID, GenResponse, LLMResponse, get_LLMResponse, LLMContext
 from services.query_discovery import ResultQuery, query_discovery, UserQuery
 from services.register_service import Register, RegisterLLM, RegisterService
+from services.mongo_service import mongo_service_instance as mongo_service
 
 app = FastAPI(
     title="Assistant Toolkit",
@@ -18,8 +19,6 @@ app = FastAPI(
 
 app.openapi_version = "3.0.2"
 load_dotenv(override=True)
-
-mongo_service = mongo_service.MongoService()
 
 @app.get("/", include_in_schema=False)
 async def root():
