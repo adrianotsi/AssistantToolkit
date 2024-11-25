@@ -64,11 +64,11 @@ def query_discovery(user_query):
                     if answer_texts:
                         result_entry["answers"] = answer_texts
                         for answer in answer_texts:
-                            passages_to_show_list.append(f"[{answer}]({document_url})")
+                            passages_to_show_list.append(f"* [{answer}]({document_url})")
 
                     all_results.append(result_entry)
 
-        passages_to_show = "\n\n* ".join(passages_to_show_list) if passages_to_show_list else ""
+        passages_to_show = "\n\n\n* ".join(passages_to_show_list) if passages_to_show_list else ""
         return {
             "result": all_results,  
             "conversationID": conversationID,
