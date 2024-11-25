@@ -14,7 +14,7 @@ from services.mongo_service import MongoService
 app = FastAPI(
     title="Assistant Toolkit",
     description="An API to integrate IBM Discovery with LLM Models and A.I Assistants.",
-    version="2.0.1"
+    version="2.0.2"
 )
 
 app.openapi_version = "3.0.2"
