@@ -113,7 +113,10 @@ async def register_client(client: client_service.Client):
     return result
 
 
-@app.post("/get_token", response_model=dict)
+@app.post("/get_token", response_model=dict, 
+         tags=['Login'],
+         name="Gera token",
+         description="Gera o token JWT utilizando para autenticação")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
    async with MongoService() as mongo_service:
         client_data = await client_service.authenticate_client(form_data.username, form_data.password)
