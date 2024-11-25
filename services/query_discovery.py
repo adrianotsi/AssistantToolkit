@@ -44,6 +44,7 @@ def query_discovery(user_query):
         all_results = []
         passages_to_show_list = []
         data = response.json()
+        document= 1
 
         for result in data.get("results", []):
             document_passages = result.get("document_passages", [])
@@ -65,6 +66,9 @@ def query_discovery(user_query):
                         result_entry["answers"] = answer_texts
                         for answer in answer_texts:
                             passages_to_show_list.append(f"* [{answer}]({document_url})")
+                    else: 
+                        passages_to_show_list.append(f"* [Documento {document}]({document_url})")
+                        document += 1
 
                     all_results.append(result_entry)
 
