@@ -69,7 +69,6 @@ def query_discovery(user_query):
                     all_results.append(result_entry)
 
         passages_to_show = "\n\n*".join(passages_to_show_list) if passages_to_show_list else ""
-        print("UÉ")
         return {
             "result": all_results,  
             "conversationID": conversationID,
