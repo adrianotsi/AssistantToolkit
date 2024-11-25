@@ -10,14 +10,15 @@ class UserQuery(BaseModel):
     conversationID: str
     
 class ResultQuery(BaseModel):
-    result: dict 
+    result: list
+    passages_to_show: str
     conversationID: str
 
 def query_discovery(user_query):
-    # TODO: Change to IBM Lib and get document passages 
+    # TODO: Change to IBM Lib
     url = f'{os.getenv("DISCOVERY_ENDPOINT")}/v2/projects/{user_query.projectID}/query'
     params = {
-        'version': '2023-03-31'  # Verifique a versão correta da API
+        'version': '2023-03-31'
     }
     headers = {
         'Content-Type': 'application/json',
@@ -30,7 +31,8 @@ def query_discovery(user_query):
         'passages':{
             'enable': True,
             'characters': 2000,
-            'max_per_document': 2
+            'max_per_document': 2,
+            "find_answers": True
         }
     }
 
@@ -39,23 +41,42 @@ def query_discovery(user_query):
     try:
         response = requests.post(url, headers=headers, params=params, json=payload)
         response.raise_for_status()
-        all_passages = {}  # Inicializa como dicionário vazio
+        all_results = []
+        passages_to_show_list = []
         data = response.json()
-
-        passage_index = 1  # Contador para numerar cada passagem
+        document= 1
 
         for result in data.get("results", []):
             document_passages = result.get("document_passages", [])
+            document_metadata = result.get("metadata", {})
+            document_url = document_metadata.get("source", {}).get("url", "URL não disponível")
+
             for passage in document_passages:
                 passage_text = passage.get("passage_text")
-                if passage_text:
-                    # Adiciona a passagem ao dicionário com uma chave numérica
-                    all_passages[f"passage_{passage_index}"] = passage_text
-                    passage_index += 1
+                answers = passage.get("answers", [])
+                answer_texts = [answer.get("answer_text") for answer in answers if "answer_text" in answer]
 
+                if passage_text:
+                    result_entry = {
+                        "passage": passage_text,
+                        "url": document_url
+                    }
+
+                    if answer_texts:
+                        result_entry["answers"] = answer_texts
+                        for answer in answer_texts:
+                            passages_to_show_list.append(f"* [{answer}]({document_url})")
+                    else: 
+                        passages_to_show_list.append(f"* [Documento {document}]({document_url})")
+                        document += 1
+
+                    all_results.append(result_entry)
+
+        passages_to_show = "\n\n\n".join(passages_to_show_list) if passages_to_show_list else ""
         return {
-            "result": all_passages,  # Retorna o dicionário de passagens
-            "conversationID": conversationID
+            "result": all_results,  
+            "conversationID": conversationID,
+            "passages_to_show": passages_to_show
         }
     except requests.exceptions.HTTPError as http_err:
         raise HTTPException(status_code=response.status_code, detail=str(http_err))

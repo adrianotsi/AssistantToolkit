@@ -23,25 +23,25 @@ class RegisterService:
     def __init__(self, mongo_service: MongoService):
         self.mongo_service = mongo_service
 
-    # TODO: improve this service
     async def create_register(self, register):
         try:
             if not register:
                 raise ValueError("Um campo está inválido")
             
-            db = await self.mongo_service.get_database()
+            async with self.mongo_service as mongo:
+                db = await mongo.get_database()
 
-            register['created_at'] = datetime.now()
-            register['updated_at'] = datetime.now()
-            if 'feedback' not in register:
-                result = await db["analyzesLLM"].insert_one(register)
-            else:
-                result = await db["analyzes"].insert_one(register)
-            
-            if not result.acknowledged:
-                raise Exception("A inserção do registro falhou")
-            
-            return str(result.inserted_id)
+                register['created_at'] = datetime.now()
+                register['updated_at'] = datetime.now()
+                if 'feedback' not in register:
+                    result = await db["analyzesLLM"].insert_one(register)
+                else:
+                    result = await db["analyzes"].insert_one(register)
+
+                if not result.acknowledged:
+                    raise Exception("A inserção do registro falhou")
+
+                return str(result.inserted_id)
         
         except ValueError as ve:
             raise Exception(f"Erro de validação: {str(ve)}")

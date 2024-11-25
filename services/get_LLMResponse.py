@@ -1,13 +1,14 @@
-import json
 import os
+from typing import Optional
 from fastapi import HTTPException
 from pydantic import BaseModel
 import requests
 
 class LLMContext(BaseModel):
     area: str
-    context: dict
+    context: list
     question: str
+    model: Optional[str] = None
     prompt: str
     messages: list
     conversationID: str
@@ -15,7 +16,7 @@ class LLMContext(BaseModel):
 class GenResponse(BaseModel):
     area: str
     question: str
-    model: str
+    model: Optional[str] = None
     prompt: str
     messages: list
     input: str
@@ -46,6 +47,8 @@ def get_LLMResponse(LLMContext, context=None):
     try:
         if context != None:
             conversationID = context['conversationID']
+        else:
+            conversationID = LLMContext.conversationID
         messages = LLMContext.messages
 
         headers = {
@@ -53,7 +56,7 @@ def get_LLMResponse(LLMContext, context=None):
         }   
 
         payload = {
-            "model": f"{getattr(LLMContext, 'model', 'llama3.1')}",
+            "model": getattr(LLMContext, 'model', 'llama3.1') or 'llama3.1',
             "stream": False,
             # "keep_alive": 0,
             "options": {
@@ -66,7 +69,7 @@ def get_LLMResponse(LLMContext, context=None):
             "messages": [
                 {
                     "role": "SYSTEM",
-                    "content": f"This conversation is identified by {getattr(LLMContext, 'conversationID', conversationID)}"
+                    "content": f"This conversation is identified by {conversationID}"
                 },
                 {
                     "role": "SYTEM",

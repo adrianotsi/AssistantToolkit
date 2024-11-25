@@ -3,23 +3,22 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
-from services import client_service, mongo_service
+from services import client_service
 from services.analytcs_service import AnalytcsService
 from services.auth_service import create_jwt, oauth2_scheme
 from services.get_LLMResponse import ConversationID, GenResponse, LLMResponse, get_LLMResponse, LLMContext
 from services.query_discovery import ResultQuery, query_discovery, UserQuery
 from services.register_service import Register, RegisterLLM, RegisterService
+from services.mongo_service import MongoService
 
 app = FastAPI(
     title="Assistant Toolkit",
     description="An API to integrate IBM Discovery with LLM Models and A.I Assistants.",
-    version="2.0.1"
+    version="2.0.2"
 )
 
 app.openapi_version = "3.0.2"
 load_dotenv(override=True)
-
-mongo_service = mongo_service.MongoService()
 
 @app.get("/", include_in_schema=False)
 async def root():
@@ -67,8 +66,9 @@ async def generateResponse(request: GenResponse, token: str = Depends(oauth2_sch
          description="Verifica se há conexão com o banco de dados")
 async def check_mongo_connection(token: str = Depends(oauth2_scheme)):
     try:
-        await mongo_service.connect()
-        return {"status": "Conexão bem-sucedida!"}
+        async with MongoService() as mongo_service:
+            await mongo_service.connect()
+            return {"status": "Conexão bem-sucedida!"}
     except Exception as e:
         raise HTTPException(status_code=503, detail=str(e))
 
@@ -78,10 +78,10 @@ async def check_mongo_connection(token: str = Depends(oauth2_scheme)):
           name="Cria registro: Perguntas + Respostas + Feedback",
           description="Adiciona o registro das questões, respostas e avaliações por operação")
 async def createRegister(request: Register, token: str = Depends(oauth2_scheme)):
-    request = request.model_dump()
-    register_service = RegisterService(mongo_service)
-    register = await register_service.create_register(request)
-    return register
+    async with MongoService() as mongo_service:
+        register_service = RegisterService(mongo_service)
+        register = await register_service.create_register(request.model_dump())
+        return register
 
 # TODO: improve responses and include more validations
 @app.post("/createRegisterLLM/", 
@@ -89,10 +89,10 @@ async def createRegister(request: Register, token: str = Depends(oauth2_scheme))
           name="Cria registro: Perguntas + Respostas",
           description="Adiciona o registro das questões, respostas geradas no LLM por operação")
 async def createRegisterLL(request: RegisterLLM, token: str = Depends(oauth2_scheme)):
-    request = request.model_dump()
-    register_service = RegisterService(mongo_service)
-    register = await register_service.create_register(request)
-    return register
+    async with MongoService() as mongo_service:
+        register_service = RegisterService(mongo_service)
+        register = await register_service.create_register(request.model_dump())
+        return register
 
 # TODO: improve this service and add exceptions for empty responses
 @app.get("/analytcs", 
@@ -100,9 +100,10 @@ async def createRegisterLL(request: RegisterLLM, token: str = Depends(oauth2_sch
          name="Gera relatório: Perguntas + Respostas + Feedback",
          description="Devolve CSV com os registros encontrados conforme query")
 async def analytcs(start_date: str = Query(...), end_date: str = Query(...), area: str = Query(...), type: str = Query(...), token: str = Depends(oauth2_scheme)):
-    analytcs_service = AnalytcsService(mongo_service)
-    analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area, type)
-    return analytcs_res
+    async with MongoService() as mongo_service:
+        analytcs_service = AnalytcsService(mongo_service)
+        analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area, type)
+        return analytcs_res
 
 # TODO: Complete the CRUD flow
 @app.post("/createClient", include_in_schema=False)
@@ -112,14 +113,18 @@ async def register_client(client: client_service.Client):
     return result
 
 
-@app.post("/get_token", response_model=dict)
+@app.post("/get_token", response_model=dict, 
+         tags=['Login'],
+         name="Gera token",
+         description="Gera o token JWT utilizando para autenticação")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
-    client_data = await client_service.authenticate_client(form_data.username, form_data.password, mongo_service)
-    if client_data:
-        token = create_jwt({"sub": form_data.username})
-        return {"access_token": token}
-    else:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Client ou senha incorretos."
-        )
+   async with MongoService() as mongo_service:
+        client_data = await client_service.authenticate_client(form_data.username, form_data.password)
+        if client_data:
+            token = create_jwt({"sub": form_data.username})
+            return {"access_token": token}
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Client ou senha incorretos."
+            )
