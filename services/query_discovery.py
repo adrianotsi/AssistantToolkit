@@ -14,10 +14,10 @@ class ResultQuery(BaseModel):
     conversationID: str
 
 def query_discovery(user_query):
-    # TODO: Change to IBM Lib and get document passages 
+    # TODO: Change to IBM Lib
     url = f'{os.getenv("DISCOVERY_ENDPOINT")}/v2/projects/{user_query.projectID}/query'
     params = {
-        'version': '2023-03-31'  # Verifique a versão correta da API
+        'version': '2023-03-31'
     }
     headers = {
         'Content-Type': 'application/json',
@@ -30,7 +30,8 @@ def query_discovery(user_query):
         'passages':{
             'enable': True,
             'characters': 2000,
-            'max_per_document': 2
+            'max_per_document': 2,
+            "find_answers": True
         }
     }
 
@@ -39,7 +40,7 @@ def query_discovery(user_query):
     try:
         response = requests.post(url, headers=headers, params=params, json=payload)
         response.raise_for_status()
-        all_results = []  # Inicializa como lista vazia
+        all_results = []
         data = response.json()
 
         for result in data.get("results", []):
@@ -47,17 +48,25 @@ def query_discovery(user_query):
             document_metadata = result.get("metadata", {})
             document_url = document_metadata.get("source", {}).get("url", "URL não disponível")
 
-            # Adiciona passagens e URL ao resultado
             for passage in document_passages:
                 passage_text = passage.get("passage_text")
+                answers = passage.get("answers", [])
+                answer_texts = [answer.get("answer_text") for answer in answers if "answer_text" in answer]
+
                 if passage_text:
-                    all_results.append({
+                    result_entry = {
                         "passage": passage_text,
                         "url": document_url
-                    })
+                    }
+
+                    if answer_texts:
+                        result_entry["answers"] = answer_texts
+
+                    all_results.append(result_entry)
+
 
         return {
-            "result": all_results,  # Retorna a lista de resultados
+            "result": all_results,
             "conversationID": conversationID
         }
     except requests.exceptions.HTTPError as http_err:
