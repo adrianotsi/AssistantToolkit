@@ -11,6 +11,7 @@ class UserQuery(BaseModel):
     
 class ResultQuery(BaseModel):
     result: list
+    passages_to_show: str
     conversationID: str
 
 def query_discovery(user_query):
@@ -41,6 +42,7 @@ def query_discovery(user_query):
         response = requests.post(url, headers=headers, params=params, json=payload)
         response.raise_for_status()
         all_results = []
+        passages_to_show_list = []
         data = response.json()
 
         for result in data.get("results", []):
@@ -61,13 +63,17 @@ def query_discovery(user_query):
 
                     if answer_texts:
                         result_entry["answers"] = answer_texts
+                        for answer in answer_texts:
+                            passages_to_show_list.append(f"[{answer}]({document_url})")
 
                     all_results.append(result_entry)
 
-
+        passages_to_show = "\n\n".join(passages_to_show_list) if passages_to_show_list else ""
+        print("UÉ")
         return {
-            "result": all_results,
-            "conversationID": conversationID
+            "result": all_results,  
+            "conversationID": conversationID,
+            "passages_to_show": passages_to_show
         }
     except requests.exceptions.HTTPError as http_err:
         raise HTTPException(status_code=response.status_code, detail=str(http_err))
