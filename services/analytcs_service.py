@@ -1,3 +1,4 @@
+from enum import Enum
 from fastapi import HTTPException
 import pandas as pd
 from fastapi.responses import StreamingResponse
@@ -5,14 +6,25 @@ import io
 from datetime import datetime
 from services.mongo_service import MongoService
 
+class AreaEnum(str, Enum):
+    enel = "enel"
+    retenção = "retenção"
+    sac = "sac"
+
+class TypeEnum(str, Enum):
+    LLMResults = "LLMResults"
+    outros = "outros"
+
 class AnalytcsService:
     def __init__(self, mongo_service: MongoService):
         self.mongo_service = mongo_service
         
     async def analytcs_search(self, start_date, end_date, area, type):
         try:
-            start_date_obj = datetime.fromisoformat(start_date)
-            end_date_obj = datetime.fromisoformat(end_date)
+            start_date_str = start_date.isoformat()
+            end_date_str = end_date.isoformat() 
+            start_date_obj = datetime.fromisoformat(start_date_str)
+            end_date_obj = datetime.fromisoformat(end_date_str)
 
             collection_name = "analyzesLLM" if type == 'LLMResults' else "analyzes"
             collection = await self.mongo_service.get_collection(collection_name)

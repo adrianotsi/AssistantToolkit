@@ -7,6 +7,7 @@ class Register(BaseModel):
     area: str
     question: str
     response: str
+    response_time: int
     feedback: str
     util: str
     created_at: datetime = Field(default_factory=datetime.now)
@@ -16,6 +17,7 @@ class RegisterLLM(BaseModel):
     area: str
     question: str
     response: str
+    response_time: int
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
