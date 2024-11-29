@@ -1,10 +1,11 @@
+from datetime import date, datetime
 import uuid
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.responses import RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from services import client_service
-from services.analytcs_service import AnalytcsService
+from services.analytcs_service import AnalytcsService, AreaEnum, TypeEnum
 from services.auth_service import create_jwt, oauth2_scheme
 from services.get_LLMResponse import ConversationID, GenResponse, LLMResponse, get_LLMResponse, LLMContext
 from services.query_discovery import ResultQuery, query_discovery, UserQuery
@@ -99,7 +100,7 @@ async def createRegisterLL(request: RegisterLLM, token: str = Depends(oauth2_sch
          tags=['Analyzes'],
          name="Gera relatório: Perguntas + Respostas + Feedback",
          description="Devolve CSV com os registros encontrados conforme query")
-async def analytcs(start_date: str = Query(...), end_date: str = Query(...), area: str = Query(...), type: str = Query(...), token: str = Depends(oauth2_scheme)):
+async def analytcs(start_date: date = Query(..., description="Buscar a partir de", example="2024-01-01"), end_date: date = Query(..., description="Buscar até", example="2024-01-01"), area: AreaEnum = Query(...), type: TypeEnum = Query(...), token: str = Depends(oauth2_scheme)):
     async with MongoService() as mongo_service:
         analytcs_service = AnalytcsService(mongo_service)
         analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area, type)
@@ -109,7 +110,7 @@ async def analytcs(start_date: str = Query(...), end_date: str = Query(...), are
 @app.post("/createClient", include_in_schema=False)
 async def register_client(client: client_service.Client):
     client = client.model_dump()
-    result = await client_service.register_client(client['userName'], client['password'], mongo_service)
+    result = await client_service.register_client(client['userName'], client['password'])
     return result
 
 
