@@ -43,29 +43,26 @@ class LLMResponse(BaseModel):
 class ConversationID(BaseModel):
     conversationID: str
 
-def get_LLMResponse(LLMContext, context=None):
+def get_LLMResponse(LLMContext, context=None, stream=False):
     try:
-        if context != None:
+        if context is not None:
             conversationID = context['conversationID']
         else:
             conversationID = LLMContext.conversationID
+
         messages = LLMContext.messages
 
         headers = {
             'Content-Type': 'application/json'
-        }   
+        }
 
         payload = {
             "model": getattr(LLMContext, 'model', 'llama3.1') or 'llama3.1',
-            "stream": False,
-            # "keep_alive": 0,
+            "stream": stream,
             "options": {
                 "num_ctx": 80000,
-                # "top_p": 0.7,  # Diminuído para limitar respostas criativas
-                "temperature": 0.7,  # Mais baixa para respostas diretas e seguras
-                # "repeat_penalty": 0.5  # Penalidade para evitar repetições
+                "temperature": 0.7
             },
-
             "messages": [
                 {
                     "role": "SYSTEM",
@@ -83,7 +80,6 @@ def get_LLMResponse(LLMContext, context=None):
         }
 
         payload["messages"].extend(messages)
-        
         payload["messages"].append(
             {
                 "role": "USER",
@@ -93,14 +89,24 @@ def get_LLMResponse(LLMContext, context=None):
 
         print(payload)
 
-        response = requests.post(f"{os.getenv("LLAMA_API")}/api/chat", headers=headers, json=payload)
+        response = requests.post(f"{os.getenv('LLAMA_API')}/api/chat", headers=headers, json=payload, stream=stream)
         response.raise_for_status()
 
-        data = response.json()
-        print(response)
-        if data["message"]["content"]:
-            return data
+        if stream:
+            # Gerador para streaming no formato text/event-stream
+            def iter_response():
+                for chunk in response.iter_content(chunk_size=1024):
+                    chunk_decoded = chunk.decode('utf-8').strip()  # Remover espaços ou novas linhas
+                    if chunk_decoded:  # Garantir que o chunk tem conteúdo significativo
+                        yield f"data: {chunk_decoded}\n\n"
+
+
+            return iter_response
         else:
-            raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama")
+            data = response.json()
+            if data["message"]["content"]:
+                return data
+            else:
+                raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama")
     except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama" + str(e))
+        raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama: " + str(e))

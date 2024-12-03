@@ -2,7 +2,7 @@ from datetime import date, datetime
 import uuid
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from services import client_service
 from services.analytcs_service import AnalytcsService, AreaEnum, TypeEnum
@@ -42,14 +42,18 @@ async def queryDiscovery(request: UserQuery, token: str = Depends(oauth2_scheme)
 async def getConversationID():
     return {'conversationID': str(uuid.uuid4())}
 
-@app.post("/getLLMResponse/", 
-          tags=["LLM"], 
+@app.post("/getLLMResponse/",
+          tags=["LLM"],
           name="Gera a resposta no LLM",
           description="Com base no conteúdo encontrado em Query Search e prompt engineering retorna uma resposta gerada no modelo alocado",
           response_model=LLMResponse)
-async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme)):
-    res = get_LLMResponse(request)
-    return res
+async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme), stream: bool = False):
+    if stream:
+        response_generator = get_LLMResponse(request, stream=True)
+        return StreamingResponse(response_generator(), media_type="text/event-stream")
+    else:
+        res = get_LLMResponse(request)
+        return res
 
 @app.post("/generateResponse/", 
           tags=["LLM"], 
