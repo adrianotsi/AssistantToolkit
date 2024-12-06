@@ -8,7 +8,7 @@ from services import client_service
 from services.analytcs_service import AnalytcsService, AreaEnum, TypeEnum
 from services.auth_service import create_jwt, oauth2_scheme
 from services.embedding_service import embedding_service
-from services.get_LLMResponse import ConversationID, GenResponse, LLMResponse, LLMResponseStreaming, get_LLMResponse, LLMContext
+from services.get_LLMResponse import ConversationID, GenResponse, LLMResponse, LLMResponseDefinitions, LLMResponseStreaming, get_LLMResponse, LLMContext
 from services.query_discovery import ResultQuery, query_discovery, UserQuery
 from services.register_service import Register, RegisterLLM, RegisterService
 from services.mongo_service import MongoService
@@ -57,29 +57,7 @@ async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme
             name="Gera a resposta no LLM via Streaming",
             description="Com base no conteúdo encontrado em Query Search e prompt engineering retorna uma resposta gerada no modelo alocado",
             response_class=LLMResponseStreaming,
-            responses = {
-                200: {
-                    "content": {
-                        "text/event-stream": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "data": {
-                                        "type": "object",
-                                        "properties": {
-                                            "data": {
-                                                "type": "string",
-                                                "description": "The generated text"
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "description": "Stream response with generated text."
-                }
-            }
+            responses = LLMResponseDefinitions.responses
         )
 
 async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme)):

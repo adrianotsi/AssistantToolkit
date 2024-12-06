@@ -4,7 +4,6 @@ from typing import Optional
 from fastapi import HTTPException, Response
 from pydantic import BaseModel
 from ollama import Client
-import requests
 
 class LLMContext(BaseModel):
     area: str
@@ -45,8 +44,76 @@ class LLMResponse(BaseModel):
 class LLMResponseStreaming(Response):
     media_type = "text/event-stream"
 
+class LLMResponseDefinitions:
+    responses = {
+    200: {
+        "content": {
+            "text/event-stream": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "data": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "The generated text"
+                                },
+                                "model": {
+                                    "type": "string",
+                                    "description": "The model used for generating the response"
+                                },
+                                "created_at": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "Timestamp when the response was created"
+                                },
+                                "done_reason": {
+                                    "type": "string",
+                                    "description": "Reason why the operation is completed"
+                                },
+                                "done": {
+                                    "type": "boolean",
+                                    "description": "Indicates whether the operation is completed"
+                                },
+                                "total_duration": {
+                                    "type": "integer",
+                                    "description": "Total time duration for the operation (in milliseconds)"
+                                },
+                                "load_duration": {
+                                    "type": "integer",
+                                    "description": "Duration for loading the model (in milliseconds)"
+                                },
+                                "prompt_eval_count": {
+                                    "type": "integer",
+                                    "description": "Number of times the prompt was evaluated"
+                                },
+                                "prompt_eval_duration": {
+                                    "type": "integer",
+                                    "description": "Total duration for prompt evaluation (in milliseconds)"
+                                },
+                                "eval_count": {
+                                    "type": "integer",
+                                    "description": "Number of evaluations performed"
+                                },
+                                "eval_duration": {
+                                    "type": "integer",
+                                    "description": "Total duration of evaluations (in milliseconds)"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "description": "Stream response with generated text and additional LLM response data."
+    }
+}
+
+
 class ConversationID(BaseModel):
     conversationID: str
+
 
 def get_LLMResponse(LLMContext, context=None, stream=False):
     try:
