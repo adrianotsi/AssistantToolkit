@@ -1,8 +1,9 @@
+import json
 import os
 from typing import Optional
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 from pydantic import BaseModel
-import requests
+from ollama import Client
 
 class LLMContext(BaseModel):
     area: str
@@ -40,67 +41,160 @@ class LLMResponse(BaseModel):
     eval_count: int
     eval_duration: int
 
+class LLMResponseStreaming(Response):
+    media_type = "text/event-stream"
+
+class LLMResponseDefinitions:
+    responses = {
+    200: {
+        "content": {
+            "text/event-stream": {
+                "schema": {
+                    "type": "object",
+                    "properties": {
+                        "data": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string",
+                                    "description": "The generated text"
+                                },
+                                "model": {
+                                    "type": "string",
+                                    "description": "The model used for generating the response"
+                                },
+                                "created_at": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "description": "Timestamp when the response was created"
+                                },
+                                "done_reason": {
+                                    "type": "string",
+                                    "description": "Reason why the operation is completed"
+                                },
+                                "done": {
+                                    "type": "boolean",
+                                    "description": "Indicates whether the operation is completed"
+                                },
+                                "total_duration": {
+                                    "type": "integer",
+                                    "description": "Total time duration for the operation (in milliseconds)"
+                                },
+                                "load_duration": {
+                                    "type": "integer",
+                                    "description": "Duration for loading the model (in milliseconds)"
+                                },
+                                "prompt_eval_count": {
+                                    "type": "integer",
+                                    "description": "Number of times the prompt was evaluated"
+                                },
+                                "prompt_eval_duration": {
+                                    "type": "integer",
+                                    "description": "Total duration for prompt evaluation (in milliseconds)"
+                                },
+                                "eval_count": {
+                                    "type": "integer",
+                                    "description": "Number of evaluations performed"
+                                },
+                                "eval_duration": {
+                                    "type": "integer",
+                                    "description": "Total duration of evaluations (in milliseconds)"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "description": "Stream response with generated text and additional LLM response data."
+    }
+}
+
+
 class ConversationID(BaseModel):
     conversationID: str
 
-def get_LLMResponse(LLMContext, context=None):
+
+def get_LLMResponse(LLMContext, context=None, stream=False):
     try:
-        if context != None:
+        ## Define client do Ollama
+        clientOllama = Client(
+            host= os.getenv('LLAMA_API'),
+            headers={'Content-Type': 'application/json'}
+        )
+
+        ## Verifica se os resultados do Discovery vieram de gerateResponse ou getLLMresponse
+        if context is not None:
             conversationID = context['conversationID']
         else:
             conversationID = LLMContext.conversationID
+
+        ## Array de toda a conversa atual
         messages = LLMContext.messages
 
-        headers = {
-            'Content-Type': 'application/json'
-        }   
-
-        payload = {
-            "model": getattr(LLMContext, 'model', 'llama3.1') or 'llama3.1',
-            "stream": False,
-            # "keep_alive": 0,
-            "options": {
-                "num_ctx": 80000,
-                # "top_p": 0.7,  # Diminuído para limitar respostas criativas
-                "temperature": 0.7,  # Mais baixa para respostas diretas e seguras
-                # "repeat_penalty": 0.5  # Penalidade para evitar repetições
-            },
-
-            "messages": [
+        ## Define payload
+        messagesArray = [
                 {
-                    "role": "SYSTEM",
+                    "role": "system",
                     "content": f"This conversation is identified by {conversationID}"
                 },
                 {
-                    "role": "SYTEM",
+                    "role": "system",
                     "content": "You must strictly adhere to this identifier and avoid referencing or mentioning information from conversations with different identifiers."
                 },
                 {
-                    "role": "SYSTEM",
+                    "role": "system",
                     "content": f"Now this is your knowledge base: {getattr(LLMContext, 'context', context)}"
                 }
             ]
-        }
-
-        payload["messages"].extend(messages)
         
-        payload["messages"].append(
+        ## Add conversa atual ao payload
+        messagesArray.extend(messages)
+
+        ## Add mensagem atual ao payload
+        messagesArray.append(
             {
-                "role": "USER",
+                "role": "user",
                 "content": LLMContext.question
             }
         )
 
-        print(payload)
+        ## Log payload 
+        print(messagesArray)
+        ## Requisição ao Ollama
+        response = clientOllama.chat(
+            model= getattr(LLMContext, 'model', 'llama3.1') or 'llama3.1',
+            stream= stream,
+            options= {             
+                "num_ctx": 80000,
+                "temperature": 0.7
+            },
+            messages=messagesArray
+        )
+        print(type(response))
 
-        response = requests.post(f"{os.getenv("LLAMA_API")}/api/chat", headers=headers, json=payload)
-        response.raise_for_status()
-
-        data = response.json()
-        print(response)
-        if data["message"]["content"]:
-            return data
-        else:
-            raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama")
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama" + str(e))
+        
+        if stream:
+            def iter_response():
+                for part in response:  
+                    chunk_decoded = part.get('message', {}).get('content', '')
+                    # if chunk_decoded:
+                    response_data = {
+                        'message': chunk_decoded or '',
+                        'model': part.get('model', ''),
+                        'created_at': part.get('created_at', ''),
+                        'done_reason': part.get('done_reason', ''),
+                        'done': part.get('done', False),
+                        'total_duration': part.get('total_duration', 0),
+                        'load_duration': part.get('load_duration', 0),
+                        'prompt_eval_count': part.get('prompt_eval_count', 0),
+                        'prompt_eval_duration': part.get('prompt_eval_duration', 0),
+                        'eval_count': part.get('eval_count', 0),
+                        'eval_duration': part.get('eval_duration', 0)
+                    }
+                    yield f"data: {json.dumps(response_data)}\n\n"
+            return iter_response
+        elif response:
+            return response
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama: " + str(e))

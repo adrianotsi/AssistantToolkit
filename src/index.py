@@ -2,12 +2,13 @@ from datetime import date, datetime
 import uuid
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from services import client_service
 from services.analytcs_service import AnalytcsService, AreaEnum, TypeEnum
 from services.auth_service import create_jwt, oauth2_scheme
-from services.get_LLMResponse import ConversationID, GenResponse, LLMResponse, get_LLMResponse, LLMContext
+from services.embedding_service import embedding_service
+from services.get_LLMResponse import ConversationID, GenResponse, LLMResponse, LLMResponseDefinitions, LLMResponseStreaming, get_LLMResponse, LLMContext
 from services.query_discovery import ResultQuery, query_discovery, UserQuery
 from services.register_service import Register, RegisterLLM, RegisterService
 from services.mongo_service import MongoService
@@ -15,7 +16,7 @@ from services.mongo_service import MongoService
 app = FastAPI(
     title="Assistant Toolkit",
     description="An API to integrate IBM Discovery with LLM Models and A.I Assistants.",
-    version="2.0.2"
+    version="2.0.3"
 )
 
 app.openapi_version = "3.0.2"
@@ -42,13 +43,31 @@ async def queryDiscovery(request: UserQuery, token: str = Depends(oauth2_scheme)
 async def getConversationID():
     return {'conversationID': str(uuid.uuid4())}
 
-@app.post("/getLLMResponse/", 
-          tags=["LLM"], 
+@app.post("/getLLMResponse/",
+          tags=["LLM"],
           name="Gera a resposta no LLM",
           description="Com base no conteúdo encontrado em Query Search e prompt engineering retorna uma resposta gerada no modelo alocado",
           response_model=LLMResponse)
 async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme)):
     res = get_LLMResponse(request)
+    return res
+
+@app.post("/getLLMResponse/stream",
+            tags=["LLM"],
+            name="Gera a resposta no LLM via Streaming",
+            description="Com base no conteúdo encontrado em Query Search e prompt engineering retorna uma resposta gerada no modelo alocado",
+            response_class=LLMResponseStreaming,
+            responses = LLMResponseDefinitions.responses
+        )
+
+async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme)):
+    response_generator = get_LLMResponse(request, stream=True)
+    return StreamingResponse(response_generator(), media_type="text/event-stream")
+
+# TODO: Check todos from this service
+@app.post("/embedding/")
+async def embeding_data():
+    res = await embedding_service()
     return res
 
 @app.post("/generateResponse/", 
