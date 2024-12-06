@@ -1,6 +1,6 @@
 import os
 from typing import Optional
-from fastapi import HTTPException
+from fastapi import HTTPException, Response
 from pydantic import BaseModel
 from ollama import Client
 import requests
@@ -40,6 +40,9 @@ class LLMResponse(BaseModel):
     prompt_eval_duration: int
     eval_count: int
     eval_duration: int
+
+class LLMResponseStreaming(Response):
+    media_type = "text/event-stream"
 
 class ConversationID(BaseModel):
     conversationID: str
