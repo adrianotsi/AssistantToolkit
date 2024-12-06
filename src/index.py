@@ -57,21 +57,27 @@ async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme
             name="Gera a resposta no LLM via Streaming",
             description="Com base no conteúdo encontrado em Query Search e prompt engineering retorna uma resposta gerada no modelo alocado",
             response_class=LLMResponseStreaming,
-            responses={
+            responses = {
                 200: {
                     "content": {
                         "text/event-stream": {
                             "schema": {
+                                "type": "object",
                                 "properties": {
                                     "data": {
-                                        "type": "string",
-                                        "description": "The generated response"
+                                        "type": "object",
+                                        "properties": {
+                                            "data": {
+                                                "type": "string",
+                                                "description": "The generated text"
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     },
-                    "description": "Stream plain text using utf8 charset.",
+                    "description": "Stream response with generated text."
                 }
             }
         )

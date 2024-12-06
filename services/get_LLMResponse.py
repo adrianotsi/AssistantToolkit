@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Optional
 from fastapi import HTTPException, Response
@@ -112,7 +113,8 @@ def get_LLMResponse(LLMContext, context=None, stream=False):
                     # Acessa o conteúdo dentro de 'message' -> 'content'
                     chunk_decoded = part.get('message', {}).get('content', '').strip()
                     if chunk_decoded:  # Verifica se há conteúdo válido
-                        yield f"data: {chunk_decoded}\n\n"
+                        data = json.dumps({'data': chunk_decoded})
+                        yield f"data: {data}\n\n"
             return iter_response
         elif response:
             return response
