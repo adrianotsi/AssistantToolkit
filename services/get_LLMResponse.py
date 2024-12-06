@@ -111,7 +111,7 @@ def get_LLMResponse(LLMContext, context=None, stream=False):
             def iter_response():
                 for part in response:  # Itera sobre o gerador
                     # Acessa o conteúdo dentro de 'message' -> 'content'
-                    chunk_decoded = part.get('message', {}).get('content', '').strip()
+                    chunk_decoded = part.get('message', {}).get('content', '')
                     if chunk_decoded:  # Verifica se há conteúdo válido
                         data = json.dumps({'data': chunk_decoded})
                         yield f"data: {data}\n\n"
