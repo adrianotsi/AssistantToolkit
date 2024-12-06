@@ -54,7 +54,7 @@ async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme
 
 @app.post("/getLLMResponse/stream",
           tags=["LLM"],
-          name="Gera a resposta no LLM",
+          name="Gera a resposta no LLM via Streaming",
           description="Com base no conteúdo encontrado em Query Search e prompt engineering retorna uma resposta gerada no modelo alocado",
           responses={
                 200: {
