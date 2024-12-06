@@ -7,6 +7,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from services import client_service
 from services.analytcs_service import AnalytcsService, AreaEnum, TypeEnum
 from services.auth_service import create_jwt, oauth2_scheme
+from services.embedding_service import embedding_service
 from services.get_LLMResponse import ConversationID, GenResponse, LLMResponse, get_LLMResponse, LLMContext
 from services.query_discovery import ResultQuery, query_discovery, UserQuery
 from services.register_service import Register, RegisterLLM, RegisterService
@@ -47,13 +48,31 @@ async def getConversationID():
           name="Gera a resposta no LLM",
           description="Com base no conteúdo encontrado em Query Search e prompt engineering retorna uma resposta gerada no modelo alocado",
           response_model=LLMResponse)
-async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme), stream: bool = False):
-    if stream:
-        response_generator = get_LLMResponse(request, stream=True)
-        return StreamingResponse(response_generator(), media_type="text/event-stream")
-    else:
-        res = get_LLMResponse(request)
-        return res
+async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme)):
+    res = get_LLMResponse(request)
+    return res
+
+@app.post("/getLLMResponse/stream",
+          tags=["LLM"],
+          name="Gera a resposta no LLM",
+          description="Com base no conteúdo encontrado em Query Search e prompt engineering retorna uma resposta gerada no modelo alocado",
+          responses={
+                200: {
+                    "content": {"text/event-stream": {}},
+                    "description": "Stream plain text using utf8 charset.",
+                }
+            }
+        )
+
+async def getLLMResponse(request: LLMContext, token: str = Depends(oauth2_scheme)):
+    response_generator = get_LLMResponse(request, stream=True)
+    return StreamingResponse(response_generator(), media_type="text/event-stream")
+
+# TODO: Check todos from this service
+@app.post("/embedding/")
+async def embeding_data():
+    res = await embedding_service()
+    return res
 
 @app.post("/generateResponse/", 
           tags=["LLM"], 

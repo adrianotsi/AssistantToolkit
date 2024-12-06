@@ -2,6 +2,7 @@ import os
 from typing import Optional
 from fastapi import HTTPException
 from pydantic import BaseModel
+from ollama import Client
 import requests
 
 class LLMContext(BaseModel):
@@ -45,68 +46,72 @@ class ConversationID(BaseModel):
 
 def get_LLMResponse(LLMContext, context=None, stream=False):
     try:
+        ## Define client do Ollama
+        clientOllama = Client(
+            host= os.getenv('LLAMA_API'),
+            headers={'Content-Type': 'application/json'}
+        )
+
+        ## Verifica se os resultados do Discovery vieram de gerateResponse ou getLLMresponse
         if context is not None:
             conversationID = context['conversationID']
         else:
             conversationID = LLMContext.conversationID
 
+        ## Array de toda a conversa atual
         messages = LLMContext.messages
 
-        headers = {
-            'Content-Type': 'application/json'
-        }
-
-        payload = {
-            "model": getattr(LLMContext, 'model', 'llama3.1') or 'llama3.1',
-            "stream": stream,
-            "options": {
-                "num_ctx": 80000,
-                "temperature": 0.7
-            },
-            "messages": [
+        ## Define payload
+        messagesArray = [
                 {
-                    "role": "SYSTEM",
+                    "role": "system",
                     "content": f"This conversation is identified by {conversationID}"
                 },
                 {
-                    "role": "SYTEM",
+                    "role": "system",
                     "content": "You must strictly adhere to this identifier and avoid referencing or mentioning information from conversations with different identifiers."
                 },
                 {
-                    "role": "SYSTEM",
+                    "role": "system",
                     "content": f"Now this is your knowledge base: {getattr(LLMContext, 'context', context)}"
                 }
             ]
-        }
+        
+        ## Add conversa atual ao payload
+        messagesArray.extend(messages)
 
-        payload["messages"].extend(messages)
-        payload["messages"].append(
+        ## Add mensagem atual ao payload
+        messagesArray.append(
             {
-                "role": "USER",
+                "role": "user",
                 "content": LLMContext.question
             }
         )
 
-        print(payload)
+        ## Log payload 
+        print(messagesArray)
+        ## Requisição ao Ollama
+        response = clientOllama.chat(
+            model= getattr(LLMContext, 'model', 'llama3.1') or 'llama3.1',
+            stream= stream,
+            options= {             
+                "num_ctx": 80000,
+                "temperature": 0.7
+            },
+            messages=messagesArray
+        )
+        print(type(response))
 
-        response = requests.post(f"{os.getenv('LLAMA_API')}/api/chat", headers=headers, json=payload, stream=stream)
-        response.raise_for_status()
-
+        
         if stream:
-            # Gerador para streaming no formato text/event-stream
             def iter_response():
-                for chunk in response.iter_content(chunk_size=1024):
-                    chunk_decoded = chunk.decode('utf-8').strip()  # Remover espaços ou novas linhas
-                    if chunk_decoded:  # Garantir que o chunk tem conteúdo significativo
+                for part in response:  # Itera sobre o gerador
+                    # Acessa o conteúdo dentro de 'message' -> 'content'
+                    chunk_decoded = part.get('message', {}).get('content', '').strip()
+                    if chunk_decoded:  # Verifica se há conteúdo válido
                         yield f"data: {chunk_decoded}\n\n"
-
-
             return iter_response
-        else:
-            data = response.json()
-            if data["message"]["content"]:
-                return data
-            else:
-                raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama")
-    except requests.exceptions.RequestException as e:
+        elif response:
+            return response
+    except Exception as e:
         raise HTTPException(status_code=500, detail="Erro ao obter resposta do Llama: " + str(e))
