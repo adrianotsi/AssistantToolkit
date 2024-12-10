@@ -9,7 +9,14 @@ class Register(BaseModel):
     response: str
     response_time: int
     feedback: str
+    response_time: int ## Tempo total 
+    eval_duration: int ## Tempo gerando resposta
+    load_time: int ## Tempo de carregamento do modelo
+    prompt_tokens: int ## Tokens no prompt
+    prompt_eval_time: int ## Tempo avaliando prompt
+    response_tokens: int ## Tokens na resposta
     util: str
+    retry: bool
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
@@ -17,7 +24,13 @@ class RegisterLLM(BaseModel):
     area: str
     question: str
     response: str
-    response_time: int
+    response_time: int ## Tempo total 
+    eval_duration: int ## Tempo gerando resposta
+    load_time: int ## Tempo de carregamento do modelo
+    prompt_tokens: int ## Tokens no prompt
+    prompt_eval_time: int ## Tempo avaliando prompt
+    response_tokens: int ## Tokens na resposta
+    retry: bool
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
