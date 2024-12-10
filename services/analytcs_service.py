@@ -41,8 +41,17 @@ class AnalytcsService:
             async for document in registers:
                 results.append(document)
 
+            # Verifica se há resultados 
+            if not results:
+                raise HTTPException(status_code=404, detail="Nenhum registro encontrado para os critérios fornecidos.")
+
             # Criando o DataFrame com os resultados
             df = pd.DataFrame(results)
+
+            # Transformando campos de nanosegundos para segundos
+            for column in ['response_time', 'eval_duration', 'load_time', 'prompt_eval_time']:
+                if column in df.columns:
+                    df[column] = df[column].apply(lambda x: x / 1_000_000_000 if pd.notnull(x) else x)
 
             # Gerando o arquivo CSV
             csv_buffer = io.StringIO()
@@ -56,5 +65,8 @@ class AnalytcsService:
                 headers={"Content-Disposition": "attachment; filename=relatorio.csv"}
             )
         
+        except HTTPException as e:
+            raise e  # Relança exceções HTTP específicas
+
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Erro ao obter relatório: {str(e)}")

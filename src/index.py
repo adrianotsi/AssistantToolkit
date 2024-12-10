@@ -16,7 +16,7 @@ from services.mongo_service import MongoService
 app = FastAPI(
     title="Assistant Toolkit",
     description="An API to integrate IBM Discovery with LLM Models and A.I Assistants.",
-    version="2.0.3"
+    version="2.0.4"
 )
 
 app.openapi_version = "3.0.2"
@@ -114,7 +114,6 @@ async def createRegisterLL(request: RegisterLLM, token: str = Depends(oauth2_sch
         register = await register_service.create_register(request.model_dump())
         return register
 
-# TODO: improve this service and add exceptions for empty responses
 @app.get("/analytcs", 
          tags=['Analyzes'],
          name="Gera relatório: Perguntas + Respostas + Feedback",
