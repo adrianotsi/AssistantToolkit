@@ -52,7 +52,7 @@ class AnalytcsService:
             for column in ['response_time', 'eval_duration', 'load_time', 'prompt_eval_time']:
                 if column in df.columns:
                     df[column] = pd.to_numeric(df[column], errors='coerce') 
-                    df[column] = (df[column] / 1_000_000_000).round().astype('Int64')
+                    df[column] = (df[column] / 1_000_000_000).apply(lambda x: round(x, 2) if pd.notnull(x) else x)
 
             # Gerando o arquivo CSV
             csv_buffer = io.StringIO()
