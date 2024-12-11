@@ -51,18 +51,19 @@ class AnalytcsService:
             # Transformando campos de nanosegundos para segundos
             for column in ['response_time', 'eval_duration', 'load_time', 'prompt_eval_time']:
                 if column in df.columns:
-                    df[column] = df[column].apply(lambda x: x / 1_000_000_000 if pd.notnull(x) else x)
+                    df[column] = pd.to_numeric(df[column], errors='coerce') 
+                    df[column] = (df[column] / 1_000_000_000).apply(lambda x: round(x, 2) if pd.notnull(x) else x)
 
-            # Gerando o arquivo CSV
-            csv_buffer = io.StringIO()
-            df.to_csv(csv_buffer, index=False)
-            csv_buffer.seek(0)
+            # Gerando o arquivo Excel
+            excel_buffer = io.BytesIO()
+            df.to_excel(excel_buffer, index=False, engine='openpyxl')
+            excel_buffer.seek(0)
 
             # Retornando o arquivo como streaming
             return StreamingResponse(
-                iter([csv_buffer.getvalue().encode('utf-8')]),
-                media_type="text/csv",
-                headers={"Content-Disposition": "attachment; filename=relatorio.csv"}
+                iter([excel_buffer.getvalue()]),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                headers={"Content-Disposition": "attachment; filename=relatorio.xlsx"}
             )
         
         except HTTPException as e:
