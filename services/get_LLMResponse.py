@@ -171,7 +171,6 @@ def get_LLMResponse(LLMContext, context=None, stream=False):
             },
             messages=messagesArray
         )
-        print(type(response))
 
         
         if stream:

@@ -49,7 +49,7 @@ class AnalytcsService:
             df = pd.DataFrame(results)
 
             # Transformando campos de nanosegundos para segundos
-            for column in ['response_time', 'eval_duration', 'load_time', 'prompt_eval_time']:
+            for column in ['response_time', 'eval_duration', 'load_time', 'prompt_eval_time', 'query_time']:
                 if column in df.columns:
                     df[column] = pd.to_numeric(df[column], errors='coerce') 
                     df[column] = (df[column] / 1_000_000_000).apply(lambda x: round(x, 2) if pd.notnull(x) else x)

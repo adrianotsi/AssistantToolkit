@@ -15,6 +15,7 @@ class Register(BaseModel):
     prompt_tokens: int ## Tokens no prompt
     prompt_eval_time: int ## Tempo avaliando prompt
     response_tokens: int ## Tokens na resposta
+    query_time: int
     util: str
     retry: bool
     created_at: datetime = Field(default_factory=datetime.now)
@@ -30,6 +31,7 @@ class RegisterLLM(BaseModel):
     prompt_tokens: int ## Tokens no prompt
     prompt_eval_time: int ## Tempo avaliando prompt
     response_tokens: int ## Tokens na resposta
+    query_time: int
     retry: bool
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
