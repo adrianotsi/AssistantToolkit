@@ -3,19 +3,20 @@ import uuid
 from fastapi import HTTPException
 from pydantic import BaseModel
 import requests
+import time
 
 class UserQuery(BaseModel):
     input: str
     projectID: str
     conversationID: str
-    
+
 class ResultQuery(BaseModel):
     result: list
     passages_to_show: str
     conversationID: str
+    response_time_ns: int
 
 def query_discovery(user_query):
-    # TODO: Change to IBM Lib
     url = f'{os.getenv("DISCOVERY_ENDPOINT")}/v2/projects/{user_query.projectID}/query'
     params = {
         'version': '2023-03-31'
@@ -28,7 +29,7 @@ def query_discovery(user_query):
     payload = {
         'query': user_query.input,
         'natural_language_query': user_query.input,
-        'passages':{
+        'passages': {
             'enable': True,
             'characters': 2000,
             'max_per_document': 1,
@@ -39,12 +40,18 @@ def query_discovery(user_query):
     conversationID = user_query.conversationID if user_query.conversationID not in [None, "null"] else str(uuid.uuid4())
 
     try:
+        start_time_ns = time.perf_counter_ns()
+
         response = requests.post(url, headers=headers, params=params, json=payload)
         response.raise_for_status()
+
+        end_time_ns = time.perf_counter_ns()
+        response_time_ns = end_time_ns - start_time_ns
+
         all_results = []
         passages_to_show_list = []
         data = response.json()
-        document= 1
+        document = 1
 
         for result in data.get("results", []):
             document_passages = result.get("document_passages", [])
@@ -66,7 +73,7 @@ def query_discovery(user_query):
                         result_entry["answers"] = answer_texts
                         for answer in answer_texts:
                             passages_to_show_list.append(f"* [{answer}]({document_url})")
-                    else: 
+                    else:
                         passages_to_show_list.append(f"* [Documento {document}]({document_url})")
                         document += 1
 
@@ -74,9 +81,10 @@ def query_discovery(user_query):
 
         passages_to_show = "\n\n\n".join(passages_to_show_list) if passages_to_show_list else ""
         return {
-            "result": all_results,  
+            "result": all_results,
             "conversationID": conversationID,
-            "passages_to_show": passages_to_show
+            "passages_to_show": passages_to_show,
+            "response_time_ns": response_time_ns
         }
     except requests.exceptions.HTTPError as http_err:
         raise HTTPException(status_code=response.status_code, detail=str(http_err))
