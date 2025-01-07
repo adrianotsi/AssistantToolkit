@@ -11,25 +11,21 @@ class AreaEnum(str, Enum):
     retenção = "retenção"
     sac = "sac"
 
-class TypeEnum(str, Enum):
-    LLMResults = "LLMResults"
-    outros = "outros"
-
 class AnalytcsService:
     def __init__(self, mongo_service: MongoService):
         self.mongo_service = mongo_service
-        
-    async def analytcs_search(self, start_date, end_date, area, type):
+
+    async def analytcs_search(self, start_date, end_date, area):
         try:
             start_date_str = start_date.isoformat()
             end_date_str = end_date.isoformat() 
             start_date_obj = datetime.fromisoformat(start_date_str)
             end_date_obj = datetime.fromisoformat(end_date_str)
 
-            collection_name = "analyzesLLM" if type == 'LLMResults' else "analyzes"
-            collection = await self.mongo_service.get_collection(collection_name)
+            collection_llm = await self.mongo_service.get_collection("analyzesLLM")
+            collection_legacy = await self.mongo_service.get_collection("analyzes")
 
-            registers = collection.find({
+            registers_llm = collection_llm.find({
                 "area": area,
                 "created_at": {
                     "$gte": start_date_obj,
@@ -37,26 +33,52 @@ class AnalytcsService:
                 }
             })
 
-            results = []
-            async for document in registers:
-                results.append(document)
+            registers_legacy = collection_legacy.find({
+                "area": area,
+                "created_at": {
+                    "$gte": start_date_obj,
+                    "$lte": end_date_obj
+                }
+            })
 
-            # Verifica se há resultados 
-            if not results:
+            results_llm = []
+            async for document in registers_llm:
+                results_llm.append(document)
+
+            results_legacy = []
+            async for document in registers_legacy:
+                results_legacy.append(document)
+
+            # Verifica se há resultados
+            if not results_llm and not results_legacy:
                 raise HTTPException(status_code=404, detail="Nenhum registro encontrado para os critérios fornecidos.")
 
-            # Criando o DataFrame com os resultados
-            df = pd.DataFrame(results)
+            # Criando DataFrames
+            df_llm = pd.DataFrame(results_llm)
+            df_legacy = pd.DataFrame(results_legacy)
+
+            # Preencher a coluna "util" e "feedback" com "N/A" para resultados da collection de respostas do LLM
+            if "util" not in df_llm.columns:
+                df_llm["util"] = "N/A"
+            if "feedback" not in df_llm.columns:
+                df_llm["feedback"] = "N/A"
+
+            # Concatenar os DataFrames 
+            df_combined = pd.concat([df_llm, df_legacy], ignore_index=True)
+
+            # Remover duplicatas com base em "question" e "response", priorizando registros de "analyzes" (registro com feeback)
+            df_combined = df_combined.sort_values(by=["created_at"], ascending=False)
+            df_combined = df_combined.drop_duplicates(subset=["question", "response"], keep="first")
 
             # Transformando campos de nanosegundos para segundos
             for column in ['response_time', 'eval_duration', 'load_time', 'prompt_eval_time', 'query_time']:
-                if column in df.columns:
-                    df[column] = pd.to_numeric(df[column], errors='coerce') 
-                    df[column] = (df[column] / 1_000_000_000).apply(lambda x: round(x, 2) if pd.notnull(x) else x)
+                if column in df_combined.columns:
+                    df_combined[column] = pd.to_numeric(df_combined[column], errors='coerce') 
+                    df_combined[column] = (df_combined[column] / 1_000_000_000).apply(lambda x: round(x, 2) if pd.notnull(x) else x)
 
             # Gerando o arquivo Excel
             excel_buffer = io.BytesIO()
-            df.to_excel(excel_buffer, index=False, engine='openpyxl')
+            df_combined.to_excel(excel_buffer, index=False, engine='openpyxl')
             excel_buffer.seek(0)
 
             # Retornando o arquivo como streaming
