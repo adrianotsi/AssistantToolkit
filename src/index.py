@@ -5,7 +5,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query, status
 from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from services import client_service
-from services.analytcs_service import AnalytcsService, AreaEnum, TypeEnum
+from services.analytcs_service import AnalytcsService, AreaEnum
 from services.auth_service import create_jwt, oauth2_scheme
 from services.embedding_service import embedding_service
 from services.get_LLMResponse import ConversationID, GenResponse, LLMResponse, LLMResponseDefinitions, LLMResponseStreaming, get_LLMResponse, LLMContext
@@ -118,10 +118,10 @@ async def createRegisterLL(request: RegisterLLM, token: str = Depends(oauth2_sch
          tags=['Analyzes'],
          name="Gera relatório: Perguntas + Respostas + Feedback",
          description="Devolve CSV com os registros encontrados conforme query")
-async def analytcs(start_date: date = Query(..., description="Buscar a partir de", example="2024-01-01"), end_date: date = Query(..., description="Buscar até", example="2024-01-01"), area: AreaEnum = Query(...), type: TypeEnum = Query(...), token: str = Depends(oauth2_scheme)):
+async def analytcs(start_date: date = Query(..., description="Buscar a partir de", example="2024-01-01"), end_date: date = Query(..., description="Buscar até", example="2024-01-01"), area: AreaEnum = Query(...), token: str = Depends(oauth2_scheme)):
     async with MongoService() as mongo_service:
         analytcs_service = AnalytcsService(mongo_service)
-        analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area, type)
+        analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area)
         return analytcs_res
 
 # TODO: Complete the CRUD flow
