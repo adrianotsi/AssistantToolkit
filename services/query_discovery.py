@@ -1,4 +1,5 @@
 import os
+import re
 import uuid
 from fastapi import HTTPException
 from pydantic import BaseModel
@@ -17,6 +18,8 @@ class ResultQuery(BaseModel):
     response_time_ns: int
 
 def query_discovery(user_query):
+
+    userInput = sanitize_query_input(user_query.input)
     url = f'{os.getenv("DISCOVERY_ENDPOINT")}/v2/projects/{user_query.projectID}/query'
     params = {
         'version': '2023-03-31'
@@ -27,8 +30,8 @@ def query_discovery(user_query):
     }
 
     payload = {
-        'query': user_query.input,
-        'natural_language_query': user_query.input,
+        'query': userInput,
+        'natural_language_query': userInput,
         'passages': {
             'enable': True,
             'characters': 2000,
@@ -90,3 +93,6 @@ def query_discovery(user_query):
         raise HTTPException(status_code=response.status_code, detail=str(http_err))
     except Exception as err:
         raise HTTPException(status_code=500, detail=str(err))
+
+def sanitize_query_input(user_input):
+    return re.sub(r"[^\w\s.,!?'-]", "", user_input)
