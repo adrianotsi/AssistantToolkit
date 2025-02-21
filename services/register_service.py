@@ -18,6 +18,8 @@ class Register(BaseModel):
     query_time: int
     util: str
     retry: bool
+    nomeColaborador: str
+    matriculaColaborador: int
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
@@ -33,6 +35,8 @@ class RegisterLLM(BaseModel):
     response_tokens: int ## Tokens na resposta
     query_time: int
     retry: bool
+    nomeColaborador: str
+    matriculaColaborador: int
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
 
