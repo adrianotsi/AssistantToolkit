@@ -145,6 +145,10 @@ def get_LLMResponse(LLMContext, context=None, stream=False):
                 {
                     "role": "system",
                     "content": f"Now this is your knowledge base: {getattr(LLMContext, 'context', context)}"
+                },
+                {
+                    "role": "system",
+                    "content": f"Now this is your knowledge base: {LLMContext.prompt}"
                 }
             ]
         
