@@ -118,7 +118,12 @@ async def createRegisterLL(request: RegisterLLM, token: str = Depends(oauth2_sch
          tags=['Analyzes'],
          name="Gera relatório: Perguntas + Respostas + Feedback",
          description="Devolve CSV com os registros encontrados conforme query")
-async def analytcs(start_date: date = Query(..., description="Buscar a partir de", example="2024-01-01"), end_date: date = Query(..., description="Buscar até", example="2024-01-01"), area: AreaEnum = Query(...), token: str = Depends(oauth2_scheme)):
+async def analytcs(
+    start_date: date = Query(..., description="Buscar a partir de", example=date.today().isoformat()), 
+    end_date: date = Query(..., description="Buscar até", example=date.today().isoformat()), 
+    area: AreaEnum = Query(...), 
+    token: str = Depends(oauth2_scheme)
+):
     async with MongoService() as mongo_service:
         analytcs_service = AnalytcsService(mongo_service)
         analytcs_res = await analytcs_service.analytcs_search(start_date, end_date, area)
