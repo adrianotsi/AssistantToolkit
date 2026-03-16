@@ -19,7 +19,7 @@ email_validator==2.2.0
 et_xmlfile==2.0.0
 fastapi==0.115.0
 fastapi-cli==0.0.5
-filelock==3.16.1
+filelock==3.20.1
 flatbuffers==24.3.25
 fsspec==2024.10.0
 google-auth==2.36.0
@@ -65,7 +65,7 @@ pandas==2.2.3
 passlib==1.7.4
 posthog==3.7.4
 protobuf==5.29.1
-pyasn1==0.6.1
+pyasn1==0.6.2
 pyasn1_modules==0.4.1
 pydantic==2.9.2
 pydantic_core==2.23.4
